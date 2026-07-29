@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>claudeCert · Claude Certified Architect</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --border:#2a3240;
+    --txt:#e6edf3; --muted:#9aa7b4; --accent:#d97742; --accent2:#e89a6b;
+    --ok:#2ea043; --warn:#d29922; --bad:#f85149; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--txt);line-height:1.55;display:flex;flex-direction:column;min-height:100vh}
+  header{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#131a24,#0d1117);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:19px;letter-spacing:-.3px}
+  .logo span{color:var(--accent2)}
+  .tabs{display:flex;gap:6px;margin-left:8px}
+  .tab{padding:8px 14px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);
+    border:1px solid transparent}
+  .tab:hover{background:var(--panel)}
+  .tab.on{background:var(--panel2);color:#fff;border-color:var(--accent)}
+  .spacer{flex:1}
+  .search{background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:10px;
+    padding:8px 12px;font-size:14px;min-width:200px}
+  #app{flex:1;display:flex;min-height:0}
+  /* layout estudio */
+  aside{width:280px;border-right:1px solid var(--border);padding:16px;overflow:auto;background:#0f141b}
+  aside h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .mod{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;
+    cursor:pointer;border:1px solid transparent;font-size:13.5px}
+  .mod:hover{background:var(--panel)}
+  .mod.active{background:var(--panel2);border-color:var(--accent)}
+  .mod .cnt{font-size:11.5px;color:var(--muted);background:#0d1117;border:1px solid var(--border);
+    border-radius:20px;padding:1px 8px;white-space:nowrap}
+  .bar{height:4px;border-radius:3px;background:#0d1117;margin:2px 12px 8px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:var(--ok);width:0}
+  main{flex:1;overflow:auto;padding:24px;display:flex;justify-content:center}
+  .stage{width:100%;max-width:860px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .chip{background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:20px;
+    padding:5px 12px;font-size:12.5px;cursor:pointer;user-select:none}
+  .chip.on{color:#fff;border-color:var(--accent);background:#2b2018}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:14px;
+    font-weight:600;cursor:pointer}
+  .btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--border)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .progresswrap{display:flex;align-items:center;gap:10px;margin-left:auto;color:var(--muted);font-size:13px}
+  .pbar{width:130px;height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+  .pbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--ok));width:0}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;
+    box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .qmeta{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:6px}
+  .tag.vf{background:#3b2a12;color:#f0b354}
+  .tag.mc{background:#12303b;color:#5ac8e0}
+  .tag.open{background:#2b2018;color:var(--accent2)}
+  .tag.mod{background:#22262e;color:var(--muted)}
+  .qnum{color:var(--muted);font-size:13px;margin-left:auto}
+  .question{font-size:19px;font-weight:650;margin:2px 0 16px;white-space:pre-wrap}
+  .opts{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+  .opt{border:1px solid var(--border);background:var(--panel2);border-radius:10px;padding:12px 14px;cursor:pointer;
+    display:flex;gap:10px;align-items:flex-start;font-size:15px}
+  .opt:hover{border-color:var(--accent)}
+  .opt .k{font-weight:700;color:var(--muted)}
+  .opt.correct{border-color:var(--ok);background:#12261a}
+  .opt.wrong{border-color:var(--bad);background:#2a1416}
+  .opt.disabled{cursor:default}
+  .answer{margin-top:16px;border-top:1px dashed var(--border);padding-top:16px;display:none}
+  .answer.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .answer h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ok)}
+  .answer .body{font-size:15.5px}
+  .answer .body strong{color:#fff}.answer .body ul{margin:8px 0;padding-left:20px}
+  .answer .body li{margin:4px 0}.answer .body p{margin:8px 0}
+  .verdict{font-weight:700;margin-bottom:8px}.verdict.v{color:var(--ok)}.verdict.f{color:var(--bad)}
+  .assess{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap}
+  .nav{display:flex;justify-content:space-between;margin-top:18px;gap:10px}
+  .empty{color:var(--muted);text-align:center;padding:60px 20px}
+  .badge-known{color:var(--ok)}.badge-review{color:var(--warn)}
+  footer{padding:9px 20px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;text-align:center}
+  /* memoria */
+  .matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .mcol{display:flex;flex-direction:column;gap:10px}
+  .mcard{border:1px solid var(--border);background:var(--panel);border-radius:10px;padding:12px 14px;cursor:pointer;
+    font-size:14.5px;transition:.15s;min-height:52px;display:flex;align-items:center}
+  .mcard:hover{border-color:var(--accent)}
+  .mcard.sel{border-color:var(--accent);background:#2b2018}
+  .mcard.matched{opacity:.35;border-color:var(--ok);background:#12261a;cursor:default}
+  .mcard.term{font-weight:700}
+  .mcard.bad{border-color:var(--bad);background:#2a1416;animation:shake .3s}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .stat{display:flex;gap:18px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .stat b{font-size:22px}.stat .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .stbox{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 16px;text-align:center}
+  select{background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:10px;padding:8px 12px;font-size:14px}
+  /* examen */
+  .exq{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+  .exq .lbl{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  textarea{width:100%;min-height:120px;background:#0d1117;border:1px solid var(--border);color:var(--txt);
+    border-radius:10px;padding:12px;font-size:14.5px;font-family:inherit;resize:vertical}
+  .radio{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--border);border-radius:9px;
+    margin:6px 0;cursor:pointer;font-size:15px}
+  .radio:hover{border-color:var(--accent)}.radio.pick{border-color:var(--accent);background:#2b2018}
+  .radio.rcorrect{border-color:var(--ok);background:#12261a}.radio.rwrong{border-color:var(--bad);background:#2a1416}
+  .timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:18px;background:var(--panel2);
+    border:1px solid var(--border);padding:6px 14px;border-radius:10px}
+  .timer.warn{color:var(--warn);border-color:var(--warn)}
+  .selfgrade{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  .sg{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);cursor:pointer;font-size:13px}
+  .sg.on{color:#fff}.sg.g1.on{background:var(--ok);border-color:var(--ok)}
+  .sg.g05.on{background:var(--warn);border-color:var(--warn);color:#111}.sg.g0.on{background:var(--bad);border-color:var(--bad)}
+  .result{text-align:center;padding:30px}
+  .score{font-size:60px;font-weight:800}.score.pass{color:var(--ok)}.score.fail{color:var(--bad)}
+  .configbox{max-width:520px;margin:20px auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px}
+  .configrow{display:flex;justify-content:space-between;align-items:center;margin:14px 0;gap:12px}
+  @media(max-width:760px){aside{display:none}main{padding:14px}.question{font-size:17px}.matchgrid{gap:8px}.mcard{font-size:13px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">claude<span>Cert</span> <span style="font-size:12px;color:var(--muted);font-weight:600">· Certified Architect – Foundations</span></div>
+  <div class="tabs">
+    <div class="tab on" data-mode="estudio">📇 Estudio</div>
+    <div class="tab" data-mode="memoria">🧩 Memoria</div>
+    <div class="tab" data-mode="examen">📝 Examen</div>
+  </div>
+  <div class="spacer"></div>
+  <input id="search" class="search" placeholder="🔍 Buscar…" style="display:none" />
+</header>
+<div id="app"></div>
+<footer>estudio local para el Claude Certified Architect – Foundations (CCA-F) · 60 preguntas / 120 min / 720 de 1000 para aprobar · tu progreso se guarda en este navegador</footer>
+
+<script src="data/questions.js"></script>
+<script src="data/matches.js"></script>
+<script>
+/* ---------- datos ---------- */
+const DATA=(window.STUDY_DATA||[]);
+const MATCH=(window.MATCH_DATA||[]);
+const ALL=[];
+DATA.forEach(m=>m.questions.forEach(q=>ALL.push({...q,module:m.id,moduleName:m.name})));
+ALL.forEach((q,i)=>q._gid='q'+i);
+const LS='claudecert_ccaf_v1';
+const state=JSON.parse(localStorage.getItem(LS)||'{}');
+function save(){localStorage.setItem(LS,JSON.stringify(state))}
+function stt(gid){return (state[gid]||{}).status||null}
+function setSt(gid,s){state[gid]={status:s};save()}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function mdToHtml(t){if(!t)return'';t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  const lines=t.split('\n');let out='',ul=false;
+  for(let ln of lines){if(/^\s*-\s+/.test(ln)){if(!ul){out+='<ul>';ul=true}out+='<li>'+ln.replace(/^\s*-\s+/,'')+'</li>'}
+    else{if(ul){out+='</ul>';ul=false}if(ln.trim())out+='<p>'+ln+'</p>'}}
+  if(ul)out+='</ul>';return out}
+const app=document.getElementById('app');
+const search=document.getElementById('search');
+let mode='estudio';
+
+/* ============ MODO ESTUDIO ============ */
+let curModule=DATA.length?DATA[0].id:null,filter='all',list=[],idx=0,order=[];
+function activeList(){
+  let l=ALL.filter(q=>q.module===curModule);
+  if(filter==='review')l=l.filter(q=>stt(q._gid)==='review');
+  else if(filter==='unseen')l=l.filter(q=>!stt(q._gid));
+  const term=search.value.trim().toLowerCase();
+  if(term)l=ALL.filter(q=>(q.question+' '+(q.answer||'')).toLowerCase().includes(term));
+  return l;
+}
+function renderEstudio(){
+  search.style.display='';
+  app.innerHTML=`<aside id="sidebar"></aside><main><div class="stage">
+    <div class="toolbar">
+      <span class="chip" data-f="all">Todas</span>
+      <span class="chip" data-f="review">⚑ Repasar</span>
+      <span class="chip" data-f="unseen">Sin ver</span>
+      <button class="btn ghost" id="shuffle">🔀 Mezclar</button>
+      <div class="progresswrap"><span id="ptext"></span><span class="pbar"><i id="pbar"></i></span></div>
+    </div>
+    <div id="cardHost"></div>
+    <div class="nav"><button class="btn ghost" id="prev">← Anterior</button><button class="btn" id="next">Siguiente →</button></div>
+  </div></main>`;
+  document.getElementById('shuffle').onclick=()=>{buildOrder();order=shuffle(order);idx=0;drawCard()};
+  document.getElementById('prev').onclick=()=>{idx=(idx-1+list.length)%list.length;drawCard()};
+  document.getElementById('next').onclick=()=>{idx=(idx+1)%list.length;drawCard()};
+  app.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{filter=c.dataset.f;idx=0;drawCard()});
+  buildOrder();drawCard();
+}
+function buildOrder(){list=activeList();order=list.map((_,i)=>i)}
+function renderSidebar(){
+  const sb=document.getElementById('sidebar');if(!sb)return;
+  sb.innerHTML='<h3>Dominios</h3>';
+  DATA.forEach(m=>{
+    const qs=ALL.filter(q=>q.module===m.id);
+    const known=qs.filter(q=>stt(q._gid)==='known').length;
+    const pct=qs.length?Math.round(known/qs.length*100):0;
+    const d=document.createElement('div');
+    d.innerHTML=`<div class="mod ${m.id===curModule?'active':''}"><span>${m.name}</span><span class="cnt">${known}/${qs.length}</span></div><div class="bar"><i style="width:${pct}%"></i></div>`;
+    d.querySelector('.mod').onclick=()=>{curModule=m.id;idx=0;buildOrder();drawCard()};
+    sb.appendChild(d);
+  });
+}
+function drawCard(){
+  renderSidebar();
+  const host=document.getElementById('cardHost');if(!host)return;
+  buildOrder();
+  const known=ALL.filter(q=>stt(q._gid)==='known').length;
+  document.getElementById('ptext').textContent=known+' / '+ALL.length+' dominadas';
+  document.getElementById('pbar').style.width=(ALL.length?known/ALL.length*100:0)+'%';
+  app.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f===filter));
+  if(!list.length){host.innerHTML='<div class="empty">No hay preguntas en esta vista.</div>';return}
+  if(idx>=list.length)idx=0;
+  const q=list[order[idx]],status=stt(q._gid);
+  let optsHtml='';
+  if(q.type==='mc')optsHtml='<div class="opts">'+q.options.map((o,i)=>`<div class="opt" data-i="${i}"><span class="k">${String.fromCharCode(65+i)}</span><span>${o}</span></div>`).join('')+'</div>';
+  else if(q.type==='vf')optsHtml='<div class="opts">'+['Verdadero','Falso'].map((o,i)=>`<div class="opt" data-i="${i}"><span class="k">${o[0]}</span><span>${o}</span></div>`).join('')+'</div>';
+  const verdict=q.type==='vf'?`<div class="verdict ${q.correct==='V'?'v':'f'}">Respuesta: ${q.correct==='V'?'VERDADERO':'FALSO'}</div>`:
+    q.type==='mc'?`<div class="verdict v">Correcta: ${String.fromCharCode(65+q.correct)}) ${q.options[q.correct]}</div>`:'';
+  host.innerHTML=`<div class="card">
+    <div class="qmeta"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span>
+      <span class="tag mod">${q.moduleName}</span>
+      ${status==='known'?'<span class="badge-known">✔ dominada</span>':status==='review'?'<span class="badge-review">⚑ repasar</span>':''}
+      <span class="qnum">${idx+1} / ${list.length}</span></div>
+    <div class="question">${q.question}</div>${optsHtml}
+    <button class="btn" id="reveal">Mostrar respuesta</button>
+    <div class="answer" id="ans"><h4>Respuesta correcta y explicación</h4>${verdict}
+      <div class="body">${mdToHtml(q.answer)}</div>
+      <div class="assess"><span style="color:var(--muted);font-size:13px">¿Cómo te fue?</span>
+        <button class="btn" style="background:var(--ok)" id="known">✔ La sé</button>
+        <button class="btn" style="background:var(--warn);color:#111" id="review">⚑ Repasar</button></div>
+    </div></div>`;
+  const ans=document.getElementById('ans');
+  function reveal(){ans.classList.add('show');document.getElementById('reveal').style.display='none';if(!status)setSt(q._gid,'seen')}
+  document.getElementById('reveal').onclick=reveal;
+  document.getElementById('known').onclick=()=>{setSt(q._gid,'known');idx=(idx+1)%list.length;drawCard()};
+  document.getElementById('review').onclick=()=>{setSt(q._gid,'review');drawCard()};
+  host.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+    if(el.classList.contains('disabled'))return;
+    const i=+el.dataset.i,ci=q.type==='vf'?(q.correct==='V'?0:1):q.correct;
+    host.querySelectorAll('.opt').forEach(o=>{o.classList.add('disabled');if(+o.dataset.i===ci)o.classList.add('correct')});
+    if(i!==ci)el.classList.add('wrong');reveal();
+  });
+}
+
+/* ============ MODO MEMORIA ============ */
+let mSel=null,mMatched=0,mErr=0,mTotal=0,mTimer=null,mSecs=0;
+function renderMemoria(){
+  search.style.display='none';
+  const cats=['Mixto (todo)',...MATCH.map(c=>c.cat)];
+  app.innerHTML=`<main><div class="stage">
+    <div class="toolbar">
+      <label style="color:var(--muted);font-size:13px">Tema:</label>
+      <select id="mcat">${cats.map((c,i)=>`<option value="${i}">${c}</option>`).join('')}</select>
+      <button class="btn" id="mnew">🔀 Nueva ronda</button>
+      <div class="progresswrap"></div>
+    </div>
+    <div class="stat">
+      <div class="stbox"><div class="lbl">Pares</div><b id="mM">0/0</b></div>
+      <div class="stbox"><div class="lbl">Errores</div><b id="mE">0</b></div>
+      <div class="stbox"><div class="lbl">Tiempo</div><b id="mT">0:00</b></div>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin-top:-6px">Hacé clic en un <b>concepto</b> (izquierda) y luego en su <b>significado</b> (derecha).</p>
+    <div id="mboard"></div>
+  </div></main>`;
+  document.getElementById('mnew').onclick=newRound;
+  document.getElementById('mcat').onchange=newRound;
+  newRound();
+}
+function newRound(){
+  clearInterval(mTimer);mSecs=0;mErr=0;mMatched=0;mSel=null;
+  const ci=+document.getElementById('mcat').value;
+  let pool=ci===0?MATCH.flatMap(c=>c.pairs):MATCH[ci-1].pairs;
+  const pairs=shuffle(pool).slice(0,Math.min(8,pool.length));
+  mTotal=pairs.length;
+  const terms=shuffle(pairs.map((p,i)=>({...p,pid:i})));
+  const defs=shuffle(pairs.map((p,i)=>({...p,pid:i})));
+  const board=document.getElementById('mboard');
+  board.innerHTML=`<div class="matchgrid">
+    <div class="mcol" id="mterms">${terms.map(p=>`<div class="mcard term" data-pid="${p.pid}" data-side="t">${p.t}</div>`).join('')}</div>
+    <div class="mcol" id="mdefs">${defs.map(p=>`<div class="mcard" data-pid="${p.pid}" data-side="d">${p.d}</div>`).join('')}</div>
+  </div>`;
+  board.querySelectorAll('.mcard').forEach(el=>el.onclick=()=>clickCard(el));
+  updMemStats();
+  mTimer=setInterval(()=>{mSecs++;document.getElementById('mT').textContent=fmt(mSecs)},1000);
+}
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function updMemStats(){document.getElementById('mM').textContent=mMatched+'/'+mTotal;document.getElementById('mE').textContent=mErr;}
+function clickCard(el){
+  if(el.classList.contains('matched'))return;
+  if(!mSel){ if(el.dataset.side!=='t'){return} mSel=el;el.classList.add('sel');return }
+  if(el===mSel){el.classList.remove('sel');mSel=null;return}
+  if(el.dataset.side!=='d'){ mSel.classList.remove('sel'); if(el.dataset.side==='t'){mSel=el;el.classList.add('sel')} else mSel=null; return }
+  // compare
+  if(el.dataset.pid===mSel.dataset.pid){
+    el.classList.add('matched');mSel.classList.add('matched');mSel.classList.remove('sel');mSel=null;
+    mMatched++;updMemStats();
+    if(mMatched===mTotal){clearInterval(mTimer);
+      setTimeout(()=>alert(`🎉 ¡Ronda completa!\nTiempo: ${fmt(mSecs)}\nErrores: ${mErr}`),200);}
+  } else {
+    mErr++;updMemStats();const a=mSel,b=el;a.classList.add('bad');b.classList.add('bad');
+    setTimeout(()=>{a.classList.remove('bad','sel');b.classList.remove('bad')},380);mSel=null;
+  }
+}
+
+/* ============ MODO EXAMEN ============ */
+const SCOPES={
+  todo:{mods:DATA.map(m=>m.id),cats:MATCH.map(c=>c.cat)},
+  d12:{mods:['agentic','mcp'],
+    cats:['Agentic Architecture','Tools & MCP']},
+  d345:{mods:['code','prompt','context'],
+    cats:['Claude Code','Prompt Engineering','Context & Reliability']},
+};
+let exam=null,exTimer=null,exLeft=0;
+function renderExamen(){
+  search.style.display='none';clearInterval(exTimer);
+  app.innerHTML=`<main><div class="stage"><div class="configbox">
+    <h2 style="margin-top:0">📝 Simulacro de examen</h2>
+    <p style="color:var(--muted)">Mezcla V/F + opción múltiple + desarrollo. El examen real es 100% opción múltiple (60 preguntas / 120 min / 720 de 1000), pero acá las de opción/V-F se corrigen solas (¡restan 0,5 si están mal!) y las de desarrollo las autocorregís contra la respuesta modelo — desarrollar la respuesta fija mejor los conceptos.</p>
+    <div class="configrow"><span>Alcance</span>
+      <select id="exScope"><option value="todo">Todo (5 dominios)</option><option value="d12">Dominios 1–2 (Agentic + Tools/MCP)</option><option value="d345">Dominios 3–5 (Code + Prompting + Contexto)</option></select></div>
+    <div class="configrow"><span>Duración</span>
+      <select id="exDur"><option value="30">30 min</option><option value="60">60 min</option><option value="120">120 min (real)</option><option value="0">Sin límite</option></select></div>
+    <div class="configrow"><span>Nº de desarrollo</span>
+      <select id="exOpen"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></div>
+    <button class="btn" id="exStart" style="width:100%;margin-top:10px">Comenzar examen</button>
+  </div></div></main>`;
+  document.getElementById('exStart').onclick=startExam;
+}
+function pickTerms(cat,correctTerm,n){
+  let pool=(MATCH.find(c=>c.cat===cat)||{pairs:[]}).pairs.map(p=>p.t).filter(t=>t!==correctTerm);
+  if(pool.length<n)pool=pool.concat(MATCH.flatMap(c=>c.pairs.map(p=>p.t)).filter(t=>t!==correctTerm));
+  return shuffle([...new Set(pool)]).slice(0,n);
+}
+function buildExam(scope,nOpen){
+  const sc=SCOPES[scope];
+  const catPairs=MATCH.filter(c=>sc.cats.includes(c.cat)).flatMap(c=>c.pairs.map(p=>({...p,cat:c.cat})));
+  const q=[];
+  // 4 MC generadas desde los pares concepto/definición
+  shuffle(catPairs).slice(0,4).forEach(p=>{
+    const opts=shuffle([p.t,...pickTerms(p.cat,p.t,3)]);
+    q.push({type:'mc',question:`Which concept matches this definition?\n\n"${p.d}"`,options:opts,correct:opts.indexOf(p.t)});
+  });
+  // 4 VF generadas
+  shuffle(catPairs).slice(4,8).forEach((p,k)=>{
+    const tru=Math.random()<0.5;let d=p.d;
+    if(!tru){const others=catPairs.filter(x=>x.t!==p.t);d=(shuffle(others)[0]||p).d;}
+    q.push({type:'vf',question:`The concept "${p.t}" is defined as:\n\n"${d}"`,correct:tru?'V':'F',
+      answer:`The correct definition of "${p.t}" is: ${p.d}`});
+  });
+  // MC/VF reales del banco de preguntas dentro del alcance
+  shuffle(ALL.filter(a=>sc.mods.includes(a.module)&&(a.type==='mc'||a.type==='vf'))).slice(0,8).forEach(a=>q.push({...a}));
+  // desarrollo
+  const opens=shuffle(ALL.filter(a=>sc.mods.includes(a.module)&&a.type==='open')).slice(0,nOpen);
+  opens.forEach(a=>q.push({...a}));
+  return shuffle(q);
+}
+function startExam(){
+  const scope=document.getElementById('exScope').value;
+  const dur=+document.getElementById('exDur').value;
+  const nOpen=+document.getElementById('exOpen').value;
+  exam={q:buildExam(scope,nOpen),ans:{},scope};
+  exLeft=dur*60;
+  renderExamForm();
+  clearInterval(exTimer);
+  if(dur>0){exTimer=setInterval(()=>{exLeft--;const t=document.getElementById('exTimer');
+    if(t){t.textContent=fmt(exLeft);if(exLeft<300)t.classList.add('warn')}
+    if(exLeft<=0){clearInterval(exTimer);gradeExam()}},1000);}
+}
+function renderExamForm(){
+  let html=`<main><div class="stage">
+    <div class="toolbar" style="position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5">
+      <b>Examen — ${exam.q.length} preguntas</b>
+      <div class="progresswrap"><span class="timer" id="exTimer">${document.getElementById('exDur')?fmt(exLeft):'--'}</span>
+      <button class="btn" id="exFinish">Finalizar y corregir</button></div>
+    </div>`;
+  exam.q.forEach((q,i)=>{
+    html+=`<div class="exq" id="exq${i}"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span><span class="qnum">Pregunta ${i+1}</span></div>
+      <div class="question">${q.question}</div>`;
+    if(q.type==='mc')html+='<div>'+q.options.map((o,j)=>`<div class="radio" data-q="${i}" data-v="${j}"><b>${String.fromCharCode(65+j)}</b> ${o}</div>`).join('')+'</div>';
+    else if(q.type==='vf')html+='<div>'+['Verdadero','Falso'].map((o,j)=>`<div class="radio" data-q="${i}" data-v="${j===0?'V':'F'}">${o}</div>`).join('')+'</div>';
+    else html+=`<textarea data-q="${i}" placeholder="Desarrollá tu respuesta acá…"></textarea>`;
+    html+='</div>';
+  });
+  html+='</div></main>';
+  app.innerHTML=html;
+  app.querySelectorAll('.radio').forEach(r=>r.onclick=()=>{
+    const qi=r.dataset.q;app.querySelectorAll(`.radio[data-q="${qi}"]`).forEach(x=>x.classList.remove('pick'));
+    r.classList.add('pick');exam.ans[qi]=r.dataset.v;});
+  app.querySelectorAll('textarea').forEach(t=>t.oninput=()=>exam.ans[t.dataset.q]=t.value);
+  document.getElementById('exFinish').onclick=()=>{if(confirm('¿Finalizar y corregir el examen?'))gradeExam()};
+}
+function gradeExam(){
+  clearInterval(exTimer);
+  let auto=0,autoMax=0,openMax=0;const openList=[];
+  exam.q.forEach((q,i)=>{
+    if(q.type==='mc'||q.type==='vf'){
+      autoMax++;const a=exam.ans[i];
+      const correct=q.type==='vf'?q.correct:String(q.correct);
+      const given=q.type==='vf'?a:String(a===undefined?'':a);
+      if(a===undefined){/*sin responder: 0*/}
+      else if(given===correct)auto+=1;else auto-=0.5;
+    } else {openMax++;openList.push(i)}
+  });
+  exam._auto=auto;exam._autoMax=autoMax;exam._openMax=openMax;exam._openList=openList;exam._openScore={};
+  renderExamResult();
+}
+function renderExamResult(){
+  let html=`<main><div class="stage"><div id="resHead"></div>`;
+  exam.q.forEach((q,i)=>{
+    const a=exam.ans[i];
+    html+=`<div class="exq"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span><span class="qnum">Pregunta ${i+1}</span></div>
+      <div class="question">${q.question}</div>`;
+    if(q.type==='mc'){
+      html+='<div>'+q.options.map((o,j)=>{let cls='radio';if(j===q.correct)cls+=' rcorrect';if(String(a)===String(j)&&j!==q.correct)cls+=' rwrong';
+        return `<div class="${cls}"><b>${String.fromCharCode(65+j)}</b> ${o}</div>`}).join('')+'</div>';
+      html+=resLine(a!==undefined&&String(a)===String(q.correct),a===undefined);
+      if(q.answer)html+=`<div class="answer show"><div class="body">${mdToHtml(q.answer)}</div></div>`;
+    } else if(q.type==='vf'){
+      html+='<div>'+['V','F'].map(v=>{let cls='radio';if(v===q.correct)cls+=' rcorrect';if(a===v&&v!==q.correct)cls+=' rwrong';
+        return `<div class="${cls}">${v==='V'?'Verdadero':'Falso'}</div>`}).join('')+'</div>';
+      html+=resLine(a===q.correct,a===undefined);
+      if(q.answer)html+=`<div class="answer show"><div class="body">${mdToHtml(q.answer)}</div></div>`;
+    } else {
+      html+=`<div style="margin:8px 0;padding:10px;background:#0d1117;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;font-size:14px">${(a||'(sin responder)').replace(/</g,'&lt;')}</div>
+        <div class="answer show"><h4>Respuesta modelo</h4><div class="body">${mdToHtml(q.answer)}</div></div>
+        <div class="selfgrade"><span style="color:var(--muted);font-size:13px">Autocorrección:</span>
+          <span class="sg g1" data-i="${i}" data-v="1">✔ Bien (1)</span>
+          <span class="sg g05" data-i="${i}" data-v="0.5">◑ Parcial (0,5)</span>
+          <span class="sg g0" data-i="${i}" data-v="0">✘ Mal (0)</span></div>`;
+    }
+    html+='</div>';
+  });
+  html+='</div></main>';
+  app.innerHTML=html;
+  app.querySelectorAll('.sg').forEach(b=>b.onclick=()=>{
+    const i=b.dataset.i;app.querySelectorAll(`.sg[data-i="${i}"]`).forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');exam._openScore[i]=+b.dataset.v;updResult();});
+  updResult();
+  document.getElementById('resHead').scrollIntoView();
+}
+function resLine(ok,blank){return `<div style="margin-top:8px;font-weight:700;color:${blank?'var(--muted)':ok?'var(--ok)':'var(--bad)'}">${blank?'— Sin responder (0)':ok?'✔ Correcta (+1)':'✘ Incorrecta (−0,5)'}</div>`}
+function updResult(){
+  const openScore=Object.values(exam._openScore).reduce((a,b)=>a+b,0);
+  const graded=Object.keys(exam._openScore).length;
+  const total=Math.max(0,exam._auto)+openScore;
+  const max=exam._autoMax+exam._openMax;
+  const pct=max?Math.round(total/max*100):0;
+  const pass=pct>=72;
+  document.getElementById('resHead').innerHTML=`<div class="card result">
+    <div class="score ${pass?'pass':'fail'}">${pct}%</div>
+    <div style="font-size:18px;margin:6px 0">${total.toFixed(1)} / ${max} puntos</div>
+    <div style="color:var(--muted)">Objetivas: ${Math.max(0,exam._auto).toFixed(1)}/${exam._autoMax} · Desarrollo: ${openScore.toFixed(1)}/${exam._openMax} (${graded}/${exam._openMax} corregidas)</div>
+    <div style="margin-top:10px;font-weight:700;color:${pass?'var(--ok)':'var(--bad)'}">${pass?'✔ Aprobado (≥72%, como el 720/1000 real)':'✘ Debajo del 72% (720/1000) — seguí repasando'}</div>
+    <button class="btn ghost" style="margin-top:16px" onclick="renderExamen()">Nuevo examen</button>
+  </div>`;
+}
+
+/* ---------- router ---------- */
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.mode===m));
+  if(m==='estudio')renderEstudio();
+  else if(m==='memoria')renderMemoria();
+  else renderExamen();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+search.oninput=()=>{if(mode==='estudio'){idx=0;drawCard()}};
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(mode==='estudio'){const n=document.getElementById('next'),p=document.getElementById('prev');
+    if(e.key==='ArrowRight'&&n)n.click();if(e.key==='ArrowLeft'&&p)p.click();
+    if(e.key===' '){const r=document.getElementById('reveal');if(r&&r.style.display!=='none'){e.preventDefault();r.click()}}}
+});
+window.renderExamen=renderExamen;
+setMode('estudio');
+</script>
+</body>
+</html>
