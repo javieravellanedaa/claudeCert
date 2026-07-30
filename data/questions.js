@@ -6,7 +6,7 @@
 window.STUDY_DATA = [
 
 { id:"agentic", name:"🤖 Agentic Architecture (27%)", questions:[
-  { type:"mc",
+  { type:"mc", sub:"1.4", lvl:"intermediate", src:"core",
     question:`A support agent must ALWAYS verify the customer's identity before processing a refund. The system prompt already says so, but in production the model sometimes skips the verification. What is the most robust solution?`,
     options:[
       `Repeat the instruction in uppercase at the beginning and end of the system prompt.`,
@@ -19,7 +19,7 @@ window.STUDY_DATA = [
 - Improving the prompt (options A, C, D) reduces the frequency of the error but does not eliminate it.
 - For critical business rules: **enforcement in code or hooks, never prompt alone**.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.1", lvl:"basic", src:"core",
     question:`What is the canonical way to detect that an agentic loop has finished its work?`,
     options:[
       `Look for phrases like "I'm done" in the response text.`,
@@ -33,7 +33,7 @@ window.STUDY_DATA = [
 - Parsing natural language ("I'm done") is **fragile and unreliable**.
 - Iteration caps (option C) are a safety guardrail, **not** the primary termination mechanism.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.1", lvl:"basic", src:"core",
     question:`In a Messages API response, which stop_reason indicates that the model wants to invoke a tool?`,
     options:[`"end_turn"`,`"max_tokens"`,`"tool_use"`,`"stop_sequence"`],
     correct:2,
@@ -43,13 +43,13 @@ The other values:
 - **"max_tokens"**: cut off by the token limit (careful: the response may be incomplete!).
 - **"stop_sequence"**: it hit a stop sequence you defined.` },
 
-  { type:"vf",
+  { type:"vf", sub:"1.1", lvl:"basic", src:"core",
     question:`The iteration cap (maximum number of loop turns) should be the main mechanism for deciding when an agent has finished its task.`,
     correct:"F",
     answer:`**False.** The iteration cap is a **safety guardrail** against runaway loops and unbounded costs — a safety net, not the termination mechanism.
 Normal termination should be based on **stop_reason = "end_turn"** (the model decided it was done). If the agent frequently hits the cap, that is a symptom of a design problem (poorly defined task, failing tools, insufficient context).` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.1", lvl:"intermediate", src:"core",
     question:`An agent runs several searches and then must compare the results against each other. To save context, a developer proposes replacing each result with a one-line summary as soon as it arrives. What is the main risk?`,
     options:[
       `Summaries consume more tokens than the original results.`,
@@ -61,7 +61,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - Keep the **full results in the history** while the reasoning still needs them.
 - Compress or discard **after** the comparison stage is finished (e.g., with a hook that trims old results, or compaction).` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.2", lvl:"intermediate", src:"core",
     question:`A coordinator-subagents research system produces reports with coverage gaps: important aspects of the topic are missing. Where is the most likely root cause?`,
     options:[
       `The subagents use a model that is too small.`,
@@ -73,7 +73,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - The subagents' execution quality is **secondary** to the quality of the decomposition plan.
 - Typical fix: improve the coordinator's planning prompt (ask it to enumerate aspects, verify coverage, consider missing angles).` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.2", lvl:"intermediate", src:"core",
     question:`A coordinator has 6 specialized subagents. For simple queries, running the full pipeline wastes time and tokens. Which pattern is appropriate?`,
     options:[
       `Always run all 6 subagents to guarantee consistency.`,
@@ -86,7 +86,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - A static pipeline that always runs everything is a **waste of resources** and adds latency without value.
 - This is the **routing** pattern from "Building Effective Agents" applied to orchestration.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.2", lvl:"intermediate", src:"core",
     question:`A research subagent processed 7 of its 10 assigned sources and returned incomplete results. What is the best recovery?`,
     options:[
       `Discard everything and relaunch the subagent with all 10 sources.`,
@@ -99,7 +99,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - Synthesizing by "inventing" what's missing (B) produces **fabrication**: the system would cite sources it never read.
 - Ignoring (D) reproduces the original problem: coverage gaps.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.3", lvl:"basic", src:"core",
     question:`In the Agent SDK, a coordinator fails to spawn subagents: every attempt fails. Which configuration should you check first?`,
     options:[
       `That the model is the largest one available.`,
@@ -111,7 +111,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - This is the Agent SDK's basic capability gating: an agent can only do what its allowed tools enable.
 - Same principle in Claude Code: permissions determine effective capabilities.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"core",
     question:`A multi-agent pipeline loses the correspondence between claims and their sources when passing information from the researcher subagent to the synthesizer. How is traceability (provenance) preserved?`,
     options:[
       `Ask the synthesizer to "remember" where each piece of data came from.`,
@@ -124,7 +124,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - With structure, the synthesizer can cite precisely and the system can **audit** every claim in the final report.
 - This concept also appears in Domain 5 as "information provenance".` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"core",
     question:`A coordinator must research 4 mutually independent subtopics. How does it minimize total latency?`,
     options:[
       `Invoking the subagents one at a time, waiting for each result before the next.`,
@@ -137,7 +137,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - A single subagent with everything (C) loses the benefits of isolated context and specialization.
 - Rule: parallelize what is independent; sequence only what has real dependencies.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.6", lvl:"basic", src:"core",
     question:`Which workflow pattern is appropriate for a task with well-defined stages known in advance (e.g., extract → translate → format)?`,
     options:[
       `Orchestrator-workers with dynamic decomposition.`,
@@ -150,7 +150,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - Dynamic decomposition (A) is reserved for **exploratory** tasks where the steps aren't known in advance.
 - Chaining's trade-off: more total latency in exchange for more precision per stage.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.6", lvl:"intermediate", src:"core",
     question:`A research task is open-ended: it is not known in advance which subtopics will emerge or how many steps are needed. Which decomposition strategy applies?`,
     options:[
       `Prompt chaining with fixed stages.`,
@@ -162,7 +162,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - A fixed pipeline (A) cannot anticipate unknown subtopics.
 - This is the key **workflow vs agent** difference: workflows follow predefined paths; agents direct their own process based on what they discover.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.2", lvl:"basic", src:"core",
     question:`In the "orchestrator-workers" pattern, what is the orchestrator's role?`,
     options:[
       `Execute all the subtasks itself, in order.`,
@@ -174,7 +174,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - It differs from simple parallelization in that the subtasks are determined **dynamically** based on the input.
 - Ideal for: multi-source research, code changes touching several files, tasks whose structure depends on the case.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.6", lvl:"intermediate", src:"core",
     question:`When is the "evaluator-optimizer" pattern appropriate?`,
     options:[
       `When the task has independent parallelizable subtasks.`,
@@ -187,7 +187,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - Examples: literary translation with nuance, code that must pass tests, writing against a rubric.
 - Cost: multiple calls per result — don't use it if a single pass already achieves sufficient quality.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.6", lvl:"basic", src:"core",
     question:`What is the "routing" pattern in LLM architectures?`,
     options:[
       `Balancing requests across several API keys.`,
@@ -199,7 +199,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - Benefit: **separation of concerns** — each flow is optimized for its case without degrading the others.
 - Examples: support (general inquiry vs refund vs technical), or routing easy questions to a small/cheap model (Haiku) and hard ones to a large one.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.6", lvl:"intermediate", src:"core",
     question:`Within the "parallelization" pattern, what is the difference between "sectioning" and "voting"?`,
     options:[
       `Sectioning splits the task into independent parts that run in parallel; voting runs the SAME task several times to compare/aggregate results.`,
@@ -211,7 +211,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - **Sectioning**: splitting the task into **independent subtasks** that run in parallel (e.g., reviewing each file separately; one call processes the query and another screens it for policy).
 - **Voting**: running the **same task several times** and aggregating (majority, union, consensus) to gain confidence (e.g., 3 independent reviewers look for vulnerabilities; what the majority confirms gets reported).` },
 
-  { type:"vf",
+  { type:"vf", sub:"1.6", lvl:"basic", src:"core",
     question:`In Anthropic's terminology, "workflow" and "agent" are synonyms: any system that uses an LLM with tools is an agent.`,
     correct:"F",
     answer:`**False.** The distinction is central:
@@ -219,7 +219,7 @@ Normal termination should be based on **stop_reason = "end_turn"** (the model de
 - **Agent**: the LLM **dynamically directs its own process** and tool usage, deciding how to proceed based on what it finds.
 Design advice: seek the **simplest** solution that works — workflows for predictable tasks; agents only when flexibility and autonomous decision-making at scale are needed.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.5", lvl:"intermediate", src:"core",
     question:`The subagents in a system return data in heterogeneous formats (JSON, tables, prose) and the coordinator gets confused integrating them. In the Agent SDK, which mechanism allows them to be normalized automatically?`,
     options:[
       `A PreToolUse hook that blocks tools that return prose.`,
@@ -233,7 +233,7 @@ Design advice: seek the **simplest** solution that works — workflows for predi
 - It is **deterministic** (code), unlike asking for it via prompt.
 Its twin **PreToolUse** runs before execution and can block or modify the call.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.5", lvl:"intermediate", src:"core",
     question:`A compliance policy forbids the agent from executing the "delete_record" tool on records of active customers. What is the correct implementation?`,
     options:[
       `Document the prohibition in the system prompt with firm language.`,
@@ -246,7 +246,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - Logging (D) detects the violation **after** the damage.
 - General exam pattern: **critical policy → enforcement in code (hooks/permissions), not in the prompt**.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.5", lvl:"advanced", src:"core",
     question:`An agent's hooks return both the raw output of each tool and the processed version into the context, and the context runs out quickly. What should be done?`,
     options:[
       `Increase the maximum output tokens.`,
@@ -258,7 +258,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - Adjust the hook to inject **only** the final format.
 - Context management principle: every token in the history must **earn its place** — duplicated or intermediate data is removed at the earliest possible layer.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.7", lvl:"intermediate", src:"core",
     question:`You resume an agent session that analyzed a repo days ago, but 3 files have changed since then. What is the best way to resume?`,
     options:[
       `Resume and assume the previous analysis is still valid.`,
@@ -271,7 +271,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - A new session (B) throws away all the accumulated context.
 - The targeted middle ground maximizes reuse + correctness.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.7", lvl:"intermediate", src:"core",
     question:`You want to explore 3 different refactoring approaches starting from the same baseline analysis by an agent, without the explorations contaminating each other. Which Agent SDK mechanism do you use?`,
     options:[
       `Three calls in the same session, one per approach.`,
@@ -284,7 +284,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - The explorations diverge in **isolation**: what is tried in one branch does not bias the others.
 - Exploring in a single session (A) contaminates: the model carries over conclusions from the previous approach.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.6", lvl:"intermediate", src:"core",
     question:`An agent must investigate 5 customer complaints that turned out to be independent problems, with common context (same account). How should the investigation be structured?`,
     options:[
       `A single sequential pass that investigates the 5 complaints in order.`,
@@ -296,7 +296,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - Sequential processing is an unnecessary bottleneck when there are no dependencies.
 - Each isolated investigation stays focused (better per-item quality) and the whole finishes sooner.` },
 
-  { type:"open",
+  { type:"open", sub:"1.4", lvl:"advanced", src:"core",
     question:`You are designing an autonomous agent that executes actions on real systems (tickets, refunds, code). List the guardrails you would implement for production.`,
     answer:`- **Iteration and budget caps**: safety net against runaway loops and runaway costs (not as primary termination).
 - **Termination via stop_reason**: the loop stops on a structural signal ("end_turn"), not by parsing text.
@@ -307,7 +307,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - **Sandboxing**: run code/commands in isolated environments.
 - **Observability**: logging of every tool call and decision for auditing and debugging.` },
 
-  { type:"open",
+  { type:"open", sub:"1.2", lvl:"advanced", src:"core",
     question:`Explain the coordinator-subagents (orchestrator-workers) pattern: how it works, when to use it, and what its typical risks are.`,
     answer:`**How it works:**
 - A **coordinator** receives the task, **dynamically decomposes** it into subtasks, delegates each one to specialized **subagents** (with their own context and scoped tools), and **synthesizes** the results.
@@ -323,7 +323,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - **Fabrication during synthesis**: if a subagent returns incomplete work, the synthesizer may "fill in" — the right move is to re-delegate what's missing, not invent it.
 - **Cost**: multiplying agents multiplies tokens; use it only when the task justifies it.` },
 
-  { type:"vf",
+  { type:"vf", sub:"1.6", lvl:"basic", src:"core",
     question:`If a task can be solved well with a single model call and a good prompt, you should still build a multi-agent system because it always performs better.`,
     correct:"F",
     answer:`**False.** Anthropic's guiding principle: **seek the simplest solution that works**.
@@ -331,7 +331,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - Multi-agent systems are justified when the task exceeds what a simple call/workflow can achieve: dynamic scope, context that doesn't fit, genuinely parallelizable subtasks.
 - On the exam, "more architecture for its own sake" options are usually distractors.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"repos",
     question:`A coordinator has spent 20 turns building an understanding of a research topic. It spawns a subagent for a follow-up subtask, but the subagent produces work that ignores everything already established. Why?`,
     options:[
       `The subagent used a different model.`,
@@ -344,7 +344,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - Inject the relevant findings in a **structured format** (facts, sources, constraints), not "see above".
 - Design rule: a subagent prompt must be **self-contained** — everything needed to do the subtask correctly.` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.2", lvl:"advanced", src:"repos",
     question:`A coordinator already holds all the information needed to answer a sub-question (it gathered it in earlier turns). Should it spawn a synthesis subagent for that sub-question?`,
     options:[
       `Yes — subagents always produce higher-quality output.`,
@@ -356,7 +356,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - Re-processing information the coordinator **already holds** means paying a full handoff (serialize → transfer → re-read) for zero new information — and every handoff risks losing nuance.
 - Rule: **delegate to acquire, synthesize in place.**` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"repos",
     question:`A subagent prompt gives a rigid step-by-step procedure ("1. search X, 2. open first result, 3. extract...") and the subagent fails whenever reality deviates from the script. What is the better prompting approach?`,
     options:[
       `Add more steps covering every possible deviation.`,
@@ -369,7 +369,7 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
 - The agent then adapts when a search returns nothing, a page is down, or the information appears in an unexpected form.
 - Procedural scripts are brittle by construction: they encode one happy path. (Use rigid procedures only where compliance matters more than adaptability — and then enforce them in code, not prose.)` },
 
-  { type:"mc",
+  { type:"mc", sub:"1.4", lvl:"advanced", src:"repos",
     question:`An agent's tool call to "create_ticket" times out; the agent cannot tell whether the ticket was created, and retrying might duplicate it. What design property of the tool prevents this problem?`,
     options:[
       `Longer timeouts.`,
@@ -380,10 +380,150 @@ Its twin **PreToolUse** runs before execution and can block or modify the call.`
     answer:`**Idempotency** makes retries safe: executing the same operation twice yields the same outcome as once.
 - Typical implementation: a **client-generated idempotency key / request ID** — the backend recognizes the repeat and returns the original result instead of creating a duplicate.
 - Essential in agentic loops, where timeouts and retries are normal: without idempotency, every ambiguous failure becomes a potential duplicate side effect.` },
+
+  { type:"mc", sub:"1.2", lvl:"intermediate", src:"ptest",
+    question:`Two parallel research subagents keep investigating the same sources, wasting tokens on duplicated work. What should the coordinator do?`,
+    options:[
+      `Run the subagents sequentially so they can see each other's work.`,
+      `Explicitly partition the research space (sources, subtopics, time ranges) BEFORE delegating, so each subagent owns a disjoint slice.`,
+      `Add a third subagent to detect duplicates.`,
+      `Let them duplicate — redundancy improves quality.`],
+    correct:1,
+    answer:`**Partition before delegating**: the coordinator divides the research space into **disjoint assignments** (by source list, subtopic, or period) and each subagent works only its slice.
+- Parallel agents cannot see each other mid-flight — deduplication must happen **at assignment time**, not during execution.
+- Sequencing (A) fixes duplication by destroying parallelism; deliberate redundancy (D) is a different pattern (voting) used for confidence, not coverage.` },
+
+  { type:"mc", sub:"1.1", lvl:"intermediate", src:"ptest",
+    question:`An agent resolves each support case with 8-10 sequential API turns, each making one small tool call (fetch customer, then fetch order, then fetch shipping...). How can turn count be reduced?`,
+    options:[
+      `Remove tools so fewer calls are possible.`,
+      `Prompt the agent to bundle related, independent tool requests into a single turn (parallel tool calls), collapsing several round-trips into one.`,
+      `Cache the customer database in the system prompt.`,
+      `Increase max_tokens per turn.`],
+    correct:1,
+    answer:`Claude can emit **multiple tool calls in one turn** when the calls are independent.
+- Prompting the agent to **batch related lookups** (customer + order + shipping in one turn) collapses 3 round-trips into 1 → lower latency and fewer turns.
+- The same idea appears at the coordinator level (parallel Task calls) and at the API level (parallel tool use blocks).` },
+
+  { type:"mc", sub:"1.6", lvl:"advanced", src:"ptest",
+    question:`A support agent's draft responses are technically correct but often incomplete: missing timelines, next steps, or context the customer needs. Which workflow addition targets this?`,
+    options:[
+      `A longer system prompt asking for completeness.`,
+      `A self-critique stage: the agent evaluates its own draft against an explicit completeness checklist (context, timeline, next steps) and revises before sending.`,
+      `Lowering the temperature.`,
+      `Sending two drafts and letting the customer choose.`],
+    correct:1,
+    answer:`A **self-critique pass** (a lightweight evaluator-optimizer): generate draft → check it against an **explicit checklist** → revise.
+- The checklist makes "complete" concrete: did I state what happens next, by when, and why?
+- One-shot generation optimizes for answering the question; the critique stage optimizes for the **customer's full needs** — different objective, separate pass.` },
+
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"ptest",
+    question:`A coordinator's context fills up because subagents return long verbose prose reports. Besides trimming on receipt, what upstream change helps most?`,
+    options:[
+      `Asking subagents to write shorter sentences.`,
+      `Changing the subagents' output contract to structured data — key facts, quotes with sources, relevance scores — instead of narrative prose.`,
+      `Giving the coordinator a bigger model.`,
+      `Splitting every subagent in two.`],
+    correct:1,
+    answer:`Fix the **output contract at the source**: subagents return **structured findings** ({fact, quote, source, score}) instead of essays.
+- Structured output is denser (more information per token), trivially mergeable, and preserves provenance.
+- Trimming downstream (hooks) treats the symptom; the contract change eliminates the waste before it is generated.` },
+
+  { type:"mc", sub:"1.2", lvl:"basic", src:"video1",
+    question:`Which task profile actually justifies a multi-agent hub-and-spoke architecture (coordinator + subagents)?`,
+    options:[
+      `A simple, narrow task that one prompt handles well — multi-agent always improves quality.`,
+      `A task decomposable into independent sub-tasks (research five sub-areas, then synthesize) where parallel, isolated work pays off.`,
+      `Any task involving more than one tool.`,
+      `Tasks where latency doesn't matter.`],
+    correct:1,
+    answer:`Hub-and-spoke earns its cost when the task **decomposes into independent sub-tasks** that benefit from parallel execution and isolated contexts, plus a synthesis step.
+- Using it for a simple narrow task is **over-engineering**: more cost, more latency, more failure surface, no quality gain.
+- Tool count (C) is irrelevant — a single agent can use many tools.` },
+
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"video1",
+    question:`Why do subagents receive an isolated, minimal context instead of the coordinator's full conversation history?`,
+    options:[
+      `Because the API forbids sharing history between agents.`,
+      `It is a deliberate design choice: isolation cuts token cost and keeps the subagent focused — irrelevant history degrades performance on the subtask.`,
+      `Because subagents use smaller models that cannot hold history.`,
+      `To keep the coordinator's history secret for security reasons.`],
+    correct:1,
+    answer:`Context isolation is **by design, not by limitation**:
+- **Cost**: re-sending the full history to every subagent multiplies tokens for no benefit.
+- **Focus**: a subagent reasoning over 50 turns of unrelated conversation performs worse on its narrow subtask than one seeing only what matters.
+- The flip side: whatever the subtask DOES need must be **explicitly injected** — isolation makes context passing a deliberate act.` },
+
+  { type:"mc", sub:"1.4", lvl:"intermediate", src:"video1",
+    question:`In a sequential multi-agent pipeline (A → B → C), what is the primary risk of weak error handling?`,
+    options:[
+      `Higher token costs at each stage.`,
+      `Errors propagate silently downstream and compound: C produces a confidently wrong output, and tracing it back to A's original failure is expensive.`,
+      `The pipeline runs slower.`,
+      `Agents refuse to run after any error.`],
+    correct:1,
+    answer:`The killer failure mode of pipelines is **silent error propagation**:
+- A's subtly wrong output becomes B's trusted input; by C the error is amplified and disguised as a confident conclusion.
+- Debugging cost grows with distance from the origin.
+- Mitigations: validation **between stages** (gates), structured errors that surface failures instead of passing defaults, and provenance so outputs are traceable to inputs.` },
+
+  { type:"mc", sub:"1.4", lvl:"basic", src:"video1",
+    question:`What is the core architectural trade-off when granting an agent broader autonomy?`,
+    options:[
+      `Autonomy vs token price per request.`,
+      `Flexibility vs safety and predictability: the more the agent decides on its own, the less predictable its behavior and the higher the risk of unsafe or incorrect actions without human checkpoints.`,
+      `Autonomy vs model size.`,
+      `There is no trade-off; autonomy is strictly better.`],
+    correct:1,
+    answer:`The fundamental dial of agent design:
+- **More autonomy** → handles novel situations, less human overhead — but **less predictable**, and mistakes execute without review.
+- **Less autonomy** → predictable and safe, but rigid and demanding of human attention.
+- Production systems place the dial per action class: autonomy for routine/reversible, checkpoints (HITL) above a defined risk bar.` },
+
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"video1",
+    question:`What should a handoff between two agents in a workflow contain?`,
+    options:[
+      `Only the final answer produced so far.`,
+      `Current task state, the relevant context for the next step, and what is expected from the receiving agent — not just a result, and not the full raw transcript either.`,
+      `The complete raw conversation transcript.`,
+      `A timestamp and nothing else.`],
+    correct:1,
+    answer:`A good handoff is a **structured package**:
+- **State**: what has been done, what remains.
+- **Relevant context**: the facts/artifacts the next step needs (with sources).
+- **Expectation**: what the receiver is supposed to produce.
+Extremes fail: only-the-answer strips context the receiver needs; the full transcript buries it in noise and burns tokens. The handoff is an interface — design it like one.` },
+
+  { type:"mc", sub:"1.1", lvl:"basic", src:"video1",
+    question:`An agent had all the correct information in context but drew the wrong conclusion from it. What class of failure is this?`,
+    options:[
+      `An environment error.`,
+      `A reasoning error — distinct from tool failures (timeouts, malformed responses) and environment issues (permissions); each class needs different handling.`,
+      `A tool error.`,
+      `A rate-limit error.`],
+    correct:1,
+    answer:`Failure taxonomy matters because remedies differ:
+- **Reasoning error**: right inputs, wrong conclusion → fix with better prompts, decomposition, verification passes.
+- **Tool error**: the tool failed (timeout, bad response) → retries, structured errors.
+- **Environment error**: permissions, missing files, config → fix the environment.
+Diagnosing the class is the first step of any agent post-mortem — treating a reasoning error with retries fixes nothing.` },
+
+  { type:"mc", sub:"1.2", lvl:"advanced", src:"video2",
+    question:`In a coordinator-subagent research system, one subagent wants to pass its findings directly to another subagent "for efficiency". Why is this an anti-pattern?`,
+    options:[
+      `It is fine — direct communication saves coordinator tokens.`,
+      `All inter-subagent communication should route through the coordinator: direct peer messaging bypasses the point of central observation, uniform error handling, and controlled information flow.`,
+      `Subagents cannot technically exchange messages.`,
+      `It only matters for more than five subagents.`],
+    correct:1,
+    answer:`The hub-and-spoke's value **is** the hub:
+- The coordinator **observes all interactions** (debuggability), applies **uniform error handling**, and **controls what information flows where** (provenance, scope).
+- Peer-to-peer shortcuts create hidden state the coordinator can't see — failures become untraceable and synthesis loses inputs it didn't know existed.
+- If routing through the hub is too expensive, fix the handoff format (structured, compact), not the topology.` },
 ]},
 
 { id:"mcp", name:"🔧 Tools & MCP (18%)", questions:[
-  { type:"mc",
+  { type:"mc", sub:"2.1", lvl:"basic", src:"core",
     question:`An agent with 8 tools systematically picks the wrong tool for certain queries. What is the MOST decisive factor in getting the model to select correctly?`,
     options:[
       `The order in which the tools appear in the list.`,
@@ -398,7 +538,7 @@ A good description includes:
 - **Limits**: what falls outside its scope.
 Anthropic recommends putting the same care into tool descriptions as into the main prompt.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"core",
     question:`The model calls an invoice search tool with dates in the wrong format ("May 3rd" instead of "2026-05-03"). Where is this best fixed?`,
     options:[
       `In the agent's general system prompt.`,
@@ -411,7 +551,7 @@ Anthropic recommends putting the same care into tool descriptions as into the ma
 - The general system prompt (A) sits "far" from the decision and competes with many other instructions.
 - Ideally: also validate in the handler and return a **structured error** that teaches the correct format.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"core",
     question:`Two tools query different customer databases (retail and corporate) but have nearly identical names and descriptions, and the model confuses them. What is the best solution?`,
     options:[
       `Add a table to the system prompt explaining when to use each one.`,
@@ -424,7 +564,7 @@ Anthropic recommends putting the same care into tool descriptions as into the ma
 - Patching via the system prompt (A) is fragile: the strongest signal when choosing a tool is its own definition.
 - Merging (C) can be valid, but it introduces a parameter the model can also get wrong; explicit specialization is usually more robust.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.2", lvl:"intermediate", src:"core",
     question:`A search tool fails and returns only "Error". The agent retries the same thing over and over. How should the tool respond to enable intelligent recovery?`,
     options:[
       `Return an HTTP code and nothing else.`,
@@ -440,7 +580,7 @@ A good structured error includes:
 - **Suggested alternatives** ("try narrowing the date range", "use the ID instead of the name").
 A bare "Error" condemns the model to retry blindly.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.2", lvl:"intermediate", src:"core",
     question:`What metadata should be included in a tool's error responses so the agent can decide whether to retry?`,
     options:[
       `A timestamp and the server name.`,
@@ -454,7 +594,7 @@ A bare "Error" condemns the model to retry blindly.` },
 - **Specific explanation**: what went wrong and how to fix it.
 The stack trace (C) burns context and does not help decide; the undocumented code (D) is opaque to the model.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.2", lvl:"advanced", src:"core",
     question:`A search tool returns an empty list both when the backend is down and when there genuinely are no results. Why is this a problem, and how is it fixed?`,
     options:[
       `It is not a problem: in both cases there is no data.`,
@@ -467,7 +607,7 @@ The stack trace (C) burns context and does not help decide; the undocumented cod
 - **Backend down** → nothing is known; concluding "does not exist" would be **false**.
 The tool must signal the failure (an **is_error: true** field in the tool_result, or an explicit error structure) so the agent retries/escalates in one case and concludes with confidence in the other.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.2", lvl:"intermediate", src:"core",
     question:`A payments tool blocks an operation due to a fraud rule. The agent retries the same operation 5 times. What is missing from the tool's response?`,
     options:[
       `A longer delay between retries.`,
@@ -479,7 +619,7 @@ The tool must signal the failure (an **is_error: true** field in the tool_result
 - **isRetryable: false** + a "policy_violation" category + an explanation → the agent stops insisting and moves to the correct alternative (report, escalate to a human).
 - Distinguishing *transient* (retryable) from *permanent* (non-retryable) is the heart of tool error design.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.3", lvl:"intermediate", src:"core",
     question:`A synthesis agent uses only 3 of its 12 available tools in 85% of cases. The other 9 cause occasional wrong selections. What should you do?`,
     options:[
       `Leave it all 12: more tools = more capability.`,
@@ -492,7 +632,7 @@ The tool must signal the failure (an **is_error: true** field in the tool_result
 - Complex cases remain covered via **coordination**: delegating to another agent that does have those tools.
 - Principle: an agent's tools should reflect its **role**, not the system's full inventory.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.3", lvl:"basic", src:"core",
     question:`You need the model to MANDATORILY call the "extract_invoice" tool on every request (never respond with free text). Which configuration guarantees this?`,
     options:[
       `tool_choice: {"type": "auto"}`,
@@ -507,7 +647,7 @@ The tool must signal the failure (an **is_error: true** field in the tool_result
 - **none**: cannot use tools.
 For structured extraction, forcing the tool eliminates free-text responses by construction.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.3", lvl:"basic", src:"core",
     question:`What is the difference between tool_choice "any" and "auto"?`,
     options:[
       `None, they are aliases.`,
@@ -519,7 +659,7 @@ For structured extraction, forcing the tool eliminates free-text responses by co
 - **any**: using a tool is **mandatory** — it eliminates the possibility of a text response without a tool, but leaves the choice of which one to the model.
 Useful when your pipeline only knows how to process tool calls: "any" guarantees there is always one.` },
 
-  { type:"vf",
+  { type:"vf", sub:"2.3", lvl:"basic", src:"core",
     question:`Giving an agent access to every tool available in the system improves its accuracy, because it will never lack a capability.`,
     correct:"F",
     answer:`**False.** An excess of tools **degrades** selection:
@@ -527,7 +667,7 @@ Useful when your pipeline only knows how to process tool calls: "any" guarantees
 - Tools outside the agent's role are pure distractors.
 Rule: **minimal set aligned to the role**; extra capabilities via delegation/coordination.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.4", lvl:"intermediate", src:"core",
     question:`Your team wants to version an MCP server's configuration in the repo, but it includes an API key. What is the correct practice?`,
     options:[
       `Commit the key in .mcp.json: the repo is private.`,
@@ -540,7 +680,7 @@ Rule: **minimal set aligned to the role**; extra capabilities via delegation/coo
 - **Never** put secrets in plain text in versioned files.
 - MCP config scopes in Claude Code: **local** (only you, this project), **project** (.mcp.json, shared), **user** (all your projects).` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.4", lvl:"intermediate", src:"core",
     question:`An agent spends several exploratory calls just to discover what data an MCP server has available. Which MCP primitive eliminates that overhead?`,
     options:[
       `Tools with longer names.`,
@@ -552,7 +692,7 @@ Rule: **minimal set aligned to the role**; extra capabilities via delegation/coo
 - The client/model can **discover and read** data without spending rounds of exploratory tool calls.
 - The three server-side primitives: **tools** (executable actions), **resources** (data/context), **prompts** (reusable templates).` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.4", lvl:"basic", src:"core",
     question:`What are the three main primitives an MCP server can expose?`,
     options:[
       `Models, endpoints, schemas.`,
@@ -566,7 +706,7 @@ Rule: **minimal set aligned to the role**; extra capabilities via delegation/coo
 - **Prompts**: reusable prompt templates that the user/client can invoke.
 On the **client** side there are also: roots, sampling, and elicitation.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.4", lvl:"basic", src:"core",
     question:`Which transports does MCP define for client-server communication?`,
     options:[
       `gRPC and GraphQL.`,
@@ -579,14 +719,14 @@ On the **client** side there are also: roots, sampling, and elicitation.` },
 - **Streamable HTTP**: for remote/shared servers (replaces the SSE transport, now deprecated).
 The choice: local and per-user → stdio; centralized multi-client service → HTTP.` },
 
-  { type:"vf",
+  { type:"vf", sub:"2.4", lvl:"basic", src:"core",
     question:`MCP (Model Context Protocol) is a proprietary Anthropic protocol that only works with Claude models.`,
     correct:"F",
     answer:`**False.** MCP is an **open standard** (open source) for connecting LLM applications to tools and data sources.
 - It was created by Anthropic but is model-agnostic: any client/LLM can implement it.
 - Its value: **standardized** integration — an MCP server written once serves any compatible client (Claude Code, Claude Desktop, IDEs, other apps).` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.5", lvl:"basic", src:"core",
     question:`In Claude Code, you need to find which files in the repo use the "parseInvoice" function. What is the most efficient approach?`,
     options:[
       `List every file with LS and read them one by one with Read.`,
@@ -598,7 +738,7 @@ The choice: local and per-user → stdio; centralized multi-client service → H
 - Enumerating + reading file by file (A) spends orders of magnitude more tokens and time.
 - Built-in tool selection rule: **Grep** to search content, **Glob** to search by file name/pattern, **Read** to read a specific known file.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.5", lvl:"intermediate", src:"core",
     question:`Claude Code's Edit tool fails because the string to replace appears 3 times in the file. What is the correct recovery?`,
     options:[
       `Retry the same call.`,
@@ -610,7 +750,7 @@ The choice: local and per-user → stdio; centralized multi-client service → H
 - On ambiguity: **Read** → find surrounding lines that make the target occurrence unique → retry **Edit** including that context.
 - Retrying as-is (A) fails deterministically; rewriting everything (C) is disproportionate and risky.` },
 
-  { type:"open",
+  { type:"open", sub:"2.1", lvl:"advanced", src:"core",
     question:`List the characteristics of a well-designed tool for an agent (interface, documentation, errors).`,
     answer:`- **Descriptive, unambiguous name**: reflects the action and the domain (search_retail_customers, not search2).
 - **Complete description**: what it does, **when to use it and when not to**, scope limits — it is the model's primary selection driver.
@@ -620,13 +760,13 @@ The choice: local and per-user → stdio; centralized multi-client service → H
 - **Controlled response size**: pagination/limits to avoid flooding the context.
 - **Idempotency** where possible, and handler-side validation (do not rely on the model alone).` },
 
-  { type:"vf",
+  { type:"vf", sub:"2.4", lvl:"basic", src:"core",
     question:`An MCP server can expose reusable prompt templates in addition to tools and data.`,
     correct:"V",
     answer:`**True.** MCP's **prompts** primitive lets the server publish parameterizable templates (e.g. "review PR", "summarize incident") that the client presents to the user and executes with arguments.
 It complements **tools** (actions) and **resources** (data).` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"repos",
     question:`A multi-tool workflow chains results: search_games returns matches, then get_game_details fetches one of them. Passing game titles as free-text strings between tools causes frequent lookup failures. What is the fix?`,
     options:[
       `Fuzzy matching on the backend.`,
@@ -639,7 +779,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - Free-text names are ambiguous (typos, duplicates, formatting variants) and break the chain unpredictably.
 - Same pattern for citations in research pipelines: a persistent **citation_id** assigned at the earliest stage keeps attribution intact through every handoff.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"repos",
     question:`A tool takes a "category" parameter, and the model keeps inventing values the backend does not recognize ("tech support", "technical", "IT help"). What schema feature fixes this?`,
     options:[
       `A longer description asking for care.`,
@@ -652,7 +792,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - The mapping becomes **deterministic at the schema level** instead of hoping post-hoc normalization catches every variant.
 - General rule: encode constraints in the **schema** (types, enums, patterns) whenever possible; prose descriptions are the fallback.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"repos",
     question:`A search tool can return thousands of matches, flooding the agent's context. How should the tool's response be designed?`,
     options:[
       `Always return everything: completeness first.`,
@@ -665,7 +805,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - The agent knows how much exists and can decide whether to fetch more — most tasks need only the first page.
 - Dumping everything burns context and buries the relevant items; a blind sample (C) hides the size of the result space from the agent.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.4", lvl:"advanced", src:"repos",
     question:`An MCP server from a third-party vendor labels its tools with readOnlyHint annotations. Your security team asks whether agents can safely auto-approve those tools. What is the correct position?`,
     options:[
       `Yes — readOnlyHint guarantees the tool has no side effects.`,
@@ -677,7 +817,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - Base auto-approval on **vendor trust + your own permission configuration** (allow/deny rules, human confirmation for sensitive operations).
 - This is the principle of least privilege applied to MCP: grant capabilities according to what you can verify, not what the counterpart claims.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.2", lvl:"advanced", src:"repos",
     question:`Where should transient failures (network timeouts) of a tool's backend be retried: inside the tool handler, or by the agent?`,
     options:[
       `Always by the agent, so it stays informed.`,
@@ -690,7 +830,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - **Actionable errors** (invalid input, policy block): return to the agent **with specifics** so it can correct the call or change strategy.
 - This keeps agent turns for decisions, not plumbing.` },
 
-  { type:"mc",
+  { type:"mc", sub:"2.3", lvl:"advanced", src:"repos",
     question:`An agent platform exposes 50+ connector tools to every request, and tool-selection accuracy is degrading. What is the recommended pattern?`,
     options:[
       `Alphabetize the tool list.`,
@@ -701,12 +841,85 @@ It complements **tools** (actions) and **resources** (data).` },
     answer:`Tool-selection quality **degrades as the tool count grows** — dozens of similar definitions dilute the decision and burn context.
 - **Dynamic scoping**: a discovery step (search over the tool catalog) determines which handful of connectors this request needs; only those are injected.
 - Same principle as agent design: the model should see the **minimal set** relevant to the task at hand.` },
+
+  { type:"mc", sub:"2.3", lvl:"advanced", src:"ptest",
+    question:`Fact-verification requests loop through the coordinator for every trivial check, adding latency. Complex verifications, however, genuinely need coordinator judgment. What tool design resolves this?`,
+    options:[
+      `Route everything through the coordinator for consistency.`,
+      `Give the agent a limited-scope verify_fact tool for simple checks, while complex verifications keep going through the coordinator route.`,
+      `Remove verification entirely.`,
+      `Verify only 10% of facts, sampled randomly.`],
+    correct:1,
+    answer:`**Scope-split tooling**: a narrow, safe **verify_fact** tool handles the high-volume simple case directly; the coordinator route remains for cases needing judgment.
+- This mirrors the 80/20 tool-scoping principle: optimize the common path with a limited tool, preserve the escalation path for the rest.
+- The tool's **limited scope** is what makes direct access safe — it can't be misused for the complex cases it wasn't designed for.` },
+
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"ptest",
+    question:`An agent consistently picks customer-account tools whenever the user's message contains the word "account", even when the request is about something else. Tool descriptions look fine. Where should you look?`,
+    options:[
+      `The model's training data.`,
+      `The system prompt: keyword-based routing rules there (e.g. "if the user mentions account, use customer tools") override the tool descriptions and cause the misrouting.`,
+      `The network layer.`,
+      `The temperature setting.`],
+    correct:1,
+    answer:`When tool descriptions are healthy but selection is systematically wrong, **audit the system prompt**: hard keyword rules ("mentions X → use tool Y") are blunt instruments that fire on superficial matches.
+- Fix: remove the keyword rule and let selection rest on **intent + tool descriptions**, or refine the rule to describe intent, not keywords.
+- Diagnostic order matters: descriptions first, then system-prompt interference, then examples.` },
+
+  { type:"mc", sub:"2.4", lvl:"basic", src:"video1",
+    question:`What does an MCP server need before being exposed in production that a local prototype typically lacks?`,
+    options:[
+      `A prettier tool naming scheme.`,
+      `The same operational rigor as any production API: rate limiting, robust error handling, and authentication/authorization on tool calls.`,
+      `More tools per server.`,
+      `A dedicated GPU.`],
+    correct:1,
+    answer:`An MCP server **is** an API in production terms:
+- **AuthN/AuthZ**: who may call which tools (agents can be manipulated; the server must enforce its own access control).
+- **Rate limiting**: an agent in a loop can hammer a backend.
+- **Error handling**: structured, actionable errors instead of crashes.
+Prototype-to-production is mostly about these operational layers, not about the tools themselves.` },
+
+  { type:"mc", sub:"2.1", lvl:"intermediate", src:"video2",
+    question:`Every tool in an agent has a single-sentence description, and tool selection is unreliable. The team debates building an ML-based tool-routing classifier. What is the most effective FIRST step?`,
+    options:[
+      `Build the routing classifier — it addresses selection directly.`,
+      `Expand the tool descriptions first: input formats, triggering conditions, prerequisites, and when-NOT-to-use boundaries. The cheapest fix for the stated defect comes before new infrastructure.`,
+      `Fine-tune the model on tool-selection data.`,
+      `Reduce to one tool.`],
+    correct:1,
+    answer:`Two exam patterns in one:
+- **The stated defect points to the fix**: "one-sentence descriptions" is the smoking gun — enrich them (formats, conditions, boundaries) before anything else.
+- **Premature infrastructure trap**: a routing classifier adds a new component, new failure modes, and maintenance — unjustifiable before exhausting the config-level fix.
+- "Most effective first step" questions reward the **cheapest adequate intervention**, not the grandest.` },
+
+  { type:"mc", sub:"2.3", lvl:"advanced", src:"video2",
+    question:`A synthesis-only agent keeps calling web_search mid-synthesis, degrading its output. The model clearly understands what web_search does. Why is "improve the tool descriptions" the WRONG fix here?`,
+    options:[
+      `Because descriptions cannot be edited after deployment.`,
+      `The agent's error is not misunderstanding the tool — it is having access to a tool outside its role. The fix is scoping down its tool access: a tool it cannot see is a tool it cannot be tempted to call.`,
+      `Because web_search has no description.`,
+      `Descriptions only matter for MCP tools.`],
+    correct:1,
+    answer:`Diagnose WHICH failure you have:
+- **Misrouting from confusion** → fix descriptions (the model picked the wrong tool because definitions were unclear).
+- **Distraction from over-provisioning** → fix **access**: remove tools outside the agent's role.
+Here the model understands web_search perfectly and still shouldn't use it — no description rewrite changes that. Scoped tool access is the structural fix.
+This distinction is a favorite exam trap: "better descriptions" sounds always-right, but it only fixes comprehension problems.` },
+
+  { type:"vf", sub:"2.5", lvl:"basic", src:"video2",
+    question:`In Claude Code, the Glob tool searches inside file contents, while Grep matches file paths by pattern.`,
+    correct:"F",
+    answer:`**False — it is exactly the other way around**:
+- **Grep** searches file **contents** (regex over text).
+- **Glob** matches file **paths/names** by pattern (\`src/**/*.ts\`).
+Workflow for a huge unfamiliar repo: Glob to narrow by structure, Grep to find by content, and only then Read the handful of relevant files — reading broadly first exhausts the context window.` },
 ]},
 
 /* ============ DOMAIN 3: CLAUDE CODE (20%) ============ */,
 
 { id:"code", name:"💻 Claude Code (20%)", questions:[
-  { type:"mc",
+  { type:"mc", sub:"3.1", lvl:"basic", src:"core",
     question:`Your team wants EVERYONE to use the same coding conventions when working with Claude Code in the repo. Where does that configuration go?`,
     options:[
       `In each developer's ~/.claude/CLAUDE.md.`,
@@ -718,14 +931,14 @@ It complements **tools** (actions) and **resources** (data).` },
 - **~/.claude/CLAUDE.md** is **personal** (applies to all your projects, never shared) — it is for individual preferences, not team standards.
 - Memory hierarchy: Enterprise (org) → Project (repo) → User (personal). More specific levels take precedence.` },
 
-  { type:"vf",
+  { type:"vf", sub:"3.1", lvl:"basic", src:"core",
     question:`CLAUDE.local.md is the right file for sharing conventions with the team, because it gets committed to the repo.`,
     correct:"F",
     answer:`**False.** **CLAUDE.local.md** is for **personal project-level** preferences and is designed NOT to be committed (it goes in .gitignore).
 - To share with the team: **CLAUDE.md** (versioned).
 - For personal global settings: **~/.claude/CLAUDE.md**.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.3", lvl:"intermediate", src:"core",
     question:`A monorepo's CLAUDE.md has grown so large that it injects irrelevant context into every session (frontend rules while you work on backend, etc.). What is the best reorganization?`,
     options:[
       `Delete half the content.`,
@@ -737,7 +950,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - The rule **activates automatically** only when matching files are touched → less irrelevant context, no manual invocation.
 - Complements: per-subdirectory CLAUDE.md files (loaded when working in that area) and **@imports** for shared bases.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.1", lvl:"intermediate", src:"core",
     question:`In a monorepo with several packages, you want a common base of conventions plus package-specific rules. How do you structure it?`,
     options:[
       `A single giant CLAUDE.md at the root.`,
@@ -750,7 +963,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - Each package adds its own **local CLAUDE.md** with specific rules, loaded when working in that package.
 - Copy/paste (C) inevitably drifts out of sync.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.2", lvl:"basic", src:"core",
     question:`You created a PR review prompt that the whole team should be able to run as /review-pr. Where do you store it?`,
     options:[
       `In ~/.claude/commands/ on your machine.`,
@@ -762,7 +975,7 @@ It complements **tools** (actions) and **resources** (data).` },
 - **~/.claude/commands/** defines **personal** commands (all your projects, only you).
 - The .md content is the prompt; it supports **$ARGUMENTS** to receive parameters and frontmatter for metadata.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.2", lvl:"basic", src:"core",
     question:`How does a custom Claude Code slash command receive parameters?`,
     options:[
       `They cannot receive parameters.`,
@@ -773,7 +986,7 @@ It complements **tools** (actions) and **resources** (data).` },
     answer:`The text following the command arrives via **$ARGUMENTS**: \`/fix-issue 123\` replaces $ARGUMENTS with "123" in the command's prompt.
 There are also **$1, $2, …** for positional arguments. The .md frontmatter lets you declare description, allowed-tools, etc.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.4", lvl:"basic", src:"core",
     question:`You are about to tackle a large migration that admits several valid approaches and touches half the codebase. How do you start in Claude Code?`,
     options:[
       `Direct execution: have it start editing right away.`,
@@ -785,7 +998,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - The model explores in read-only mode, proposes a plan, and you approve it **before** any edit.
 - It avoids discovering halfway through that the approach was wrong, with half the repo already edited.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.4", lvl:"basic", src:"core",
     question:`A typo needs fixing in an error message, in a known file. Is plan mode appropriate?`,
     options:[
       `Yes, planning is always appropriate.`,
@@ -797,7 +1010,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - Plan mode shines for architectural work; for a typo it only adds steps.
 - Exam criterion: match the ceremony to the risk/ambiguity of the change, rather than always applying the maximum process.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.4", lvl:"intermediate", src:"core",
     question:`Exploring a huge codebase to understand its structure fills the main session's context with search results. What mechanism avoids this?`,
     options:[
       `Run the searches more slowly.`,
@@ -809,7 +1022,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - The main session preserves its context for the underlying work.
 - Claude Code ships subagents such as **Explore**, and you can define custom subagents in **.claude/agents/**.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.5", lvl:"intermediate", src:"core",
     question:`Claude Code generates commit messages with inconsistent formatting despite the prose instructions in CLAUDE.md. Which technique solves this best?`,
     options:[
       `Write the instruction in bold.`,
@@ -822,7 +1035,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - The model imitates patterns far more faithfully than it follows abstract rules.
 - This applies equally to API prompts (Domain 4) and to CLAUDE.md.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.5", lvl:"intermediate", src:"core",
     question:`You ask Claude Code to implement a feature with vague requirements in an architecture it does not know well. Which pattern improves the outcome?`,
     options:[
       `Have it start coding and correct itself along the way.`,
@@ -834,7 +1047,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - Especially valuable with vague requirements or unfamiliar architectures.
 - Cheap: a few questions cost less than an entire misdirected implementation.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.5", lvl:"advanced", src:"core",
     question:`A review found 6 issues: 2 affect each other (changing one impacts the other) and 4 are independent. How do you iterate the fixes?`,
     options:[
       `Everything together in a single pass.`,
@@ -847,7 +1060,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - **Independent** issues → **sequential**: one fix at a time, **verified** before moving on — if something breaks, you know exactly which change caused it.
 - Everything at once (A) mixes effects and makes it impossible to isolate regressions.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.6", lvl:"basic", src:"core",
     question:`Which flag runs Claude Code in non-interactive (headless) mode for a CI pipeline?`,
     options:[`--batch`,`-p / --print`,`--silent`,`--ci`],
     correct:1,
@@ -855,7 +1068,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - It is the documented way to integrate it into **CI/CD** (GitHub Actions, etc.).
 - It combines with **--output-format json** (or stream-json) for output the pipeline can parse.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.6", lvl:"intermediate", src:"core",
     question:`In CI you want Claude Code's automated review to produce parseable findings (file, line, comment) so they can be posted as PR comments. How?`,
     options:[
       `Parse the response prose with regex.`,
@@ -867,7 +1080,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - The pipeline consumes it directly, without fragile regexes over prose.
 - Same principle as Domain 4: when output feeds software, structure is enforced — free text is not parsed.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.6", lvl:"intermediate", src:"core",
     question:`The automated CI reviewer suggests tests that already exist and changes that violate repo conventions. What is missing?`,
     options:[
       `A larger model.`,
@@ -881,7 +1094,7 @@ There are also **$1, $2, …** for positional arguments. The .md frontmatter let
 - Architecture decisions already made (avoids relitigating them on every PR).
 In headless mode, CLAUDE.md loads just as in interactive mode: it is the project's persistent memory.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.7", lvl:"basic", src:"core",
     question:`Which Claude Code hook event runs BEFORE each tool execution and can block it?`,
     options:[`PostToolUse`,`PreToolUse`,`Stop`,`SessionStart`],
     correct:1,
@@ -892,7 +1105,7 @@ Other useful events:
 - **Stop / SubagentStop**: when the agent/subagent finishes responding.
 - **SessionStart / PreCompact / Notification**: session start, before compaction, notifications.` },
 
-  { type:"vf",
+  { type:"vf", sub:"3.7", lvl:"basic", src:"core",
     question:`Claude Code hooks are suggestions that the model may decide to ignore if its reasoning justifies it.`,
     correct:"F",
     answer:`**False.** Hooks are **shell commands executed by the harness**, not instructions to the model:
@@ -900,7 +1113,7 @@ Other useful events:
 - The model cannot ignore or skip them — which is why they are the correct mechanism for hard policies (blocking dangerous commands, formatting after every edit, validating before commit).
 - Prompt = probabilistic; hook = guaranteed.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.7", lvl:"intermediate", src:"core",
     question:`You want Claude Code to NEVER be able to read the project's .env file or run "rm -rf". Where is this configured?`,
     options:[
       `In CLAUDE.md, with a clear warning.`,
@@ -913,7 +1126,7 @@ Other useful events:
 - CLAUDE.md (A) is context/instruction: it influences but does not guarantee.
 - Settings hierarchy: enterprise (managed) > project local (.claude/settings.local.json) > project (.claude/settings.json, versioned) > user (~/.claude/settings.json).` },
 
-  { type:"open",
+  { type:"open", sub:"3.1", lvl:"advanced", src:"core",
     question:`Describe Claude Code's memory file hierarchy (CLAUDE.md): the levels, what each is for, and which one is shared with the team.`,
     answer:`From broadest scope to narrowest:
 - **Enterprise policy**: managed by the organization, applies to every user in the company (deployed by IT, not user-editable).
@@ -927,7 +1140,7 @@ Complements:
 - **.claude/rules/** with path globs for automatically activated, finely scoped rules.
 - More specific levels take precedence over general ones.` },
 
-  { type:"open",
+  { type:"open", sub:"3.6", lvl:"advanced", src:"core",
     question:`Explain how you would integrate Claude Code into a CI/CD pipeline for automated PR review: flags, output format, context, and false-positive control.`,
     answer:`- **Headless execution**: \`claude -p "<review prompt>"\` in the CI job (GitHub Actions or other).
 - **Structured output**: \`--output-format json\` with a findings schema (file, line, severity, comment) so the pipeline can post them as PR comments without parsing prose.
@@ -937,7 +1150,7 @@ Complements:
 - **Budget**: time/token limits for the job; a blocking review must be fast (the Batch API is unsuitable for blocking checks: it is asynchronous).
 - **Verification**: treat findings as candidates; optionally a second pass that verifies them to reduce noise.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.2", lvl:"intermediate", src:"repos",
     question:`Some guidance for Claude Code should apply on every request (coding conventions), while other guidance is a multi-step procedure needed only for specific tasks (a release checklist). How should each be stored?`,
     options:[
       `Everything in CLAUDE.md: one file is simpler.`,
@@ -950,7 +1163,7 @@ Complements:
 - **Skills / slash commands** = **on-demand** instructions: multi-step procedures (release, incident review) that load only when invoked or relevant.
 - Stuffing procedures into CLAUDE.md burns context on every unrelated request; hiding conventions in commands means they are usually absent.` },
 
-  { type:"mc",
+  { type:"mc", sub:"3.5", lvl:"intermediate", src:"repos",
     question:`A long Claude Code session is approaching its context limit mid-task. What are the two main options, and when does each apply?`,
     options:[
       `Restart the terminal vs reinstall Claude Code.`,
@@ -962,10 +1175,94 @@ Complements:
 - **/compact**: compresses the history into a summary and continues — right choice **mid-task**, where continuity matters and recent context is still relevant.
 - **Fresh session**: right choice for **new, distinct work** — no summarization noise, clean start. For long-running work, extract a **structured checkpoint** (decisions made, files touched, pending items) and inject it into the new session.
 - Compaction is lossy: precise details can degrade — critical facts belong in files (or the checkpoint), not only in conversation history.` },
+
+  { type:"mc", sub:"3.6", lvl:"advanced", src:"ptest",
+    question:`Claude generates code and also reviews it in the same session, and the review consistently approves its own subtle bugs. Why, and what fixes it?`,
+    options:[
+      `The model is too small; upgrade it.`,
+      `Self-review inherits the generator's assumptions (self-rationalization bias); run the review as a second, independent Claude instance with fresh context that only sees the code.`,
+      `Reviews should be done at lower temperature in the same session.`,
+      `Add "be very critical" to the same session's prompt.`],
+    correct:1,
+    answer:`A reviewer that shares the generator's context also shares its **assumptions and rationalizations** — it "knows" why the code is right.
+- An **independent instance with fresh context** sees only the artifact, not the reasoning that produced it, so it evaluates what was actually written.
+- Same principle as human code review: the author is the worst-placed person to catch their own blind spots.` },
+
+  { type:"mc", sub:"3.6", lvl:"intermediate", src:"ptest",
+    question:`An automated PR reviewer re-reports the same known issues on every new commit, drowning developers in repeats. What fixes the noise?`,
+    options:[
+      `Reviewing only the first commit of each PR.`,
+      `Including prior findings in the review context and instructing the reviewer to report only NEW or still-unresolved issues.`,
+      `Limiting the reviewer to 3 findings per run.`,
+      `Running the review weekly instead of per-commit.`],
+    correct:1,
+    answer:`Give the reviewer **memory of what was already reported**: prior findings go into context, and the instruction becomes "report only what is new or changed".
+- Without that context, every run rediscovers everything — correct but useless.
+- Arbitrary caps (C) or lower frequency (D) reduce noise by reducing coverage; the context fix reduces noise while keeping coverage.` },
+
+  { type:"mc", sub:"3.2", lvl:"advanced", src:"ptest",
+    question:`A team skill needs to: require an input from the user, run in isolation without polluting the main session, and be restricted to read-only tools. Which skill configuration fields deliver this?`,
+    options:[
+      `description, model, temperature`,
+      `argument-hint (prompt for the input), context: fork (isolated subagent execution), and allowed-tools (restrict to read-only tools).`,
+      `name, version, author`,
+      `Skills cannot be configured; use a plain prompt.`],
+    correct:1,
+    answer:`Three frontmatter capabilities of skills/commands:
+- **argument-hint**: declares the expected input so the invocation prompts for it.
+- **context: fork**: runs the skill in an **isolated subagent context** — its verbose work doesn't pollute the main session.
+- **allowed-tools**: caps the skill's tool access (e.g. read-only) regardless of what the session allows.
+Together they make the skill safe, self-documenting, and context-clean.` },
+
+  { type:"mc", sub:"3.2", lvl:"intermediate", src:"ptest",
+    question:`A developer has a personal skill named "commit" in ~/.claude/skills/ and the project also defines a "commit" skill. Which one runs, and why does it matter for teams?`,
+    options:[
+      `The project version always wins; personal files are ignored.`,
+      `The personal version overrides the project version with the same name — so a developer's local customization can silently shadow team-standard behavior.`,
+      `Both run in sequence.`,
+      `Claude Code refuses to start on name conflicts.`],
+    correct:1,
+    answer:`**Personal skills override project skills of the same name.**
+- Useful: individuals can customize their own workflow.
+- Risky: a stale personal "commit" skill silently shadows the team's updated standard — a debugging surprise when "the same command" behaves differently across machines.
+- Team hygiene: namespace project skills distinctly, and check for shadowing when a teammate's behavior diverges.` },
+
+  { type:"mc", sub:"3.1", lvl:"advanced", src:"video1",
+    question:`A Claude Code session hits a context compaction event. What happens to the guidance from the project's CLAUDE.md, and what does this imply for important instructions?`,
+    options:[
+      `CLAUDE.md guidance is lost like any other context and must be re-typed.`,
+      `CLAUDE.md is durable: it lives on disk and is re-read/re-injected after compaction — unlike mid-conversation instructions, which can be lost. Important standing rules belong in files, not in chat.`,
+      `Compaction never occurs while a CLAUDE.md exists.`,
+      `CLAUDE.md is only read once at install time.`],
+    correct:1,
+    answer:`The durability split:
+- **CLAUDE.md (and rules files)**: persist on disk, survive compaction, re-injected — the durable memory layer.
+- **Mid-conversation instructions**: live only in the history; compaction can summarize them away.
+Practical rule: anything that must **always** hold (conventions, constraints, prohibitions) goes in CLAUDE.md/rules; the conversation is for the task at hand, not for standing law.` },
+
+  { type:"mc", sub:"3.5", lvl:"basic", src:"video1",
+    question:`A developer writes the test suite for a feature first, then asks Claude Code to implement until all tests pass, iterating on failures. What workflow is this and why does it work well?`,
+    options:[
+      `Prompt chaining.`,
+      `Test-driven iteration: the tests are an executable, unambiguous definition of "correct", giving each iteration a precise, verifiable target.`,
+      `Plan mode.`,
+      `Batch processing.`],
+    correct:1,
+    answer:`**Test-driven iteration** pairs naturally with agentic coding:
+- Tests turn vague requirements into a **verifiable oracle**: the loop is implement → run tests → read failures → fix.
+- Failures are **specific feedback** (exactly what broke and where) — the highest-quality iteration signal there is.
+- Bonus: the model can't rationalize "close enough"; green is green.` },
+
+  { type:"vf", sub:"3.6", lvl:"intermediate", src:"video2",
+    question:`To run Claude Code non-interactively in CI, you set the CLAUDE_HEADLESS=true environment variable or pass the --batch flag.`,
+    correct:"F",
+    answer:`**False — neither exists.** The real mechanism is the **-p / --print** flag (headless mode), optionally with **--output-format json** for parseable output.
+- This is a recurring exam distractor pattern: **confidently named flags, env vars, or parameters that sound plausible but are fabricated**.
+- Defense: know the real flags cold, and treat oddly specific unfamiliar options with suspicion.` },
 ]},
 
 { id:"prompt", name:"✍️ Prompt Engineering (20%)", questions:[
-  { type:"mc",
+  { type:"mc", sub:"4.1", lvl:"intermediate", src:"core",
     question:`An automated code reviewer reports too many false positives: it flags patterns the team considers acceptable. What is the most effective prompt fix?`,
     options:[
       `Add "be less strict".`,
@@ -978,7 +1275,7 @@ Complements:
 - Vague instructions ("be reasonable", "use your judgment") produce inconsistent boundaries.
 - Capping the count (C) or intersecting (D) hides the problem instead of defining the correct boundary.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.1", lvl:"intermediate", src:"core",
     question:`An extractor must flag "magic numbers" in code, but it also reports HTTP status codes (200, 404). How do you fix it?`,
     options:[
       `Ban all numbers from the report.`,
@@ -990,7 +1287,7 @@ Complements:
 - "Do not flag standard HTTP codes (200, 404, 500…), conventional ports, 0/1/-1" eliminates the entire class of false positives.
 - Post-processing (D) patches symptoms: the exception list always gets away from you; better for the model to understand the boundary.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.1", lvl:"intermediate", src:"core",
     question:`A documentation generator produces inconsistent results: sometimes it documents private functions, sometimes with too much detail. What is the prompt missing?`,
     options:[
       `More output tokens.`,
@@ -1004,7 +1301,7 @@ Complements:
 - **Level of detail**: e.g. a one-line summary + parameters + example.
 Without a defined scope, each run "decides" differently. Temperature 0 (D) does not fix missing criteria: it makes the arbitrary consistently arbitrary.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.2", lvl:"basic", src:"core",
     question:`You need generated bug reports to ALWAYS follow the same structure (file, line, description, proposed fix). What is the most effective technique?`,
     options:[
       `Describe the structure in detailed prose.`,
@@ -1017,7 +1314,7 @@ Without a defined scope, each run "decides" differently. Temperature 0 (D) does 
 - Examples should be **diverse** (covering variants) and **exact** (the format you show is the format you get).
 - For a hard structural guarantee, combine with tool use + JSON schema (structured output).` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.2", lvl:"intermediate", src:"core",
     question:`A ticket classifier works well on clear cases but fails on ambiguous ones (is "I can't pay" billing or technical?). How do you improve it?`,
     options:[
       `Remove the ambiguous categories.`,
@@ -1030,7 +1327,7 @@ Without a defined scope, each run "decides" differently. Temperature 0 (D) does 
 - Showing the why gives the model the **decision rule**, not just the mapping.
 - General few-shot rule: invest examples where the model gets it wrong, not where it gets it right.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.2", lvl:"intermediate", src:"core",
     question:`An extractor performs well on tabular documents but fails on prose documents. Which adjustment targets the cause?`,
     options:[
       `Convert all prose to tables before extracting.`,
@@ -1043,7 +1340,7 @@ Without a defined scope, each run "decides" differently. Temperature 0 (D) does 
 - More examples of the format that already works (C) do not transfer to the format that fails.
 - Principle: few-shot examples must be **representative of the real input distribution**, including the hard cases.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.3", lvl:"basic", src:"core",
     question:`A pipeline generates JSON that sometimes contains syntax errors (trailing commas, unclosed quotes), breaking the parser. What is the fundamental solution?`,
     options:[
       `A more tolerant JSON parser.`,
@@ -1056,7 +1353,7 @@ Without a defined scope, each run "decides" differently. Temperature 0 (D) does 
 - Tolerant parsers (A) and retries (D) treat symptoms and eventually fail.
 - Exam rule: if the output feeds software, **force structure**; do not parse prose.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.3", lvl:"intermediate", src:"core",
     question:`You have several extraction tools and need to guarantee that the model calls SOME tool (never replies with free text), but that it chooses which one based on the document. What do you configure?`,
     options:[
       `tool_choice: {"type": "auto"}`,
@@ -1069,7 +1366,7 @@ Without a defined scope, each run "decides" differently. Temperature 0 (D) does 
 - {"type":"tool","name":...} would force **a specific one** (here you want it to choose based on the document).
 - The scale: none < auto < any < tool — from least to most restrictive.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.4", lvl:"intermediate", src:"core",
     question:`An invoice extractor produces totals that don't match the line items (arithmetic validation fails). What is the best retry loop?`,
     options:[
       `Retry the exact same request.`,
@@ -1083,7 +1380,7 @@ Without a defined scope, each run "decides" differently. Temperature 0 (D) does 
 - the **original document**.
 The model can then locate and correct its error. Retrying identically (A) usually repeats the same failure: nothing changed in the input.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.4", lvl:"advanced", src:"core",
     question:`You want to systematically analyze a detector's false positives in order to improve it. What field do you add to the output schema?`,
     options:[
       `A timestamp.`,
@@ -1096,7 +1393,7 @@ The model can then locate and correct its error. Retrying identically (A) usuall
 - Each class found becomes an **exclusion rule** in the prompt.
 - It is instrumentation for iterative improvement: without knowing the why behind each finding, debugging is guesswork.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.4", lvl:"advanced", src:"core",
     question:`A pipeline retries the extraction of the "tax_id" field 3 times and always fails. Looking at the document, the field does not exist (it is in an annex that was not included). What is the pipeline missing?`,
     options:[
       `More retries.`,
@@ -1109,7 +1406,7 @@ The model can then locate and correct its error. Retrying identically (A) usuall
 - If it does not exist: record "not present" (or escalate to retrieving the annex) — any extracted value would be **fabricated**.
 - The schema should allow null/"not_found" so the model can honestly say "it's not there".` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.5", lvl:"basic", src:"core",
     question:`You need to classify 50,000 historical documents with no rush (the result will be used next week). Which API is the right fit and why?`,
     options:[
       `Standard Messages API, in a sequential loop.`,
@@ -1123,7 +1420,7 @@ The model can then locate and correct its error. Retrying identically (A) usuall
 - Perfect for: backfills, bulk classification, evaluations — anything latency-tolerant.
 - **Not** suitable for blocking flows (a PR check that gates the merge cannot wait hours).` },
 
-  { type:"vf",
+  { type:"vf", sub:"4.5", lvl:"basic", src:"core",
     question:`The Message Batches API is a good choice for an automated check that blocks the merge of every pull request.`,
     correct:"F",
     answer:`**False.** The Batch API is **asynchronous** (results guaranteed within up to 24 h; usually under 1 h): unacceptable for a **blocking** check where the developer is waiting.
@@ -1131,7 +1428,7 @@ The model can then locate and correct its error. Retrying identically (A) usuall
 - Batch → latency-tolerant jobs (backfills, nightly analyses) with 50% savings.
 The exam loves this trade-off: latency vs cost.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.5", lvl:"intermediate", src:"core",
     question:`In a batch of 10,000 documents, 200 failed. Which Batch API field lets you identify and reprocess ONLY those 200?`,
     options:[
       `The order index of the responses.`,
@@ -1144,7 +1441,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Partial-failure recovery: filter the custom_ids with errors and resubmit **only those** in a new batch.
 - Reprocessing everything (D) doubles the cost of the 9,800 that already came out fine.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.6", lvl:"intermediate", src:"core",
     question:`A code review that evaluates 10 aspects in a single pass produces inconsistent results: sometimes it goes deep on security, sometimes on style. What structure improves consistency?`,
     options:[
       `A longer prompt enumerating the 10 aspects.`,
@@ -1157,7 +1454,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Focused passes are more consistent and deeper per dimension, at the cost of more calls.
 - It is prompt chaining applied to review (Domains 1 and 4 intersect here).` },
 
-  { type:"vf",
+  { type:"vf", sub:"4.2", lvl:"basic", src:"core",
     question:`Wrapping prompt sections in XML tags (<document>, <instructions>, <example>) helps Claude distinguish the parts of the prompt and improves reliability.`,
     correct:"V",
     answer:`**True.** **XML tags** are Anthropic's recommended technique for structuring prompts:
@@ -1165,7 +1462,7 @@ The exam loves this trade-off: latency vs cost.` },
 - They allow referencing sections ("using the <contract>…").
 - They combine well with everything else: few-shot inside <example>, long documents in <document> at the start of the prompt.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.3", lvl:"intermediate", src:"core",
     question:`You want the response to start directly with the JSON, without a preamble like "Here is the analysis:". Without using tools, what technique achieves this?`,
     options:[
       `Asking it to "add no preamble".`,
@@ -1177,7 +1474,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Also useful for enforcing formats, staying in character, or continuing truncated outputs.
 - Note: for JSON with strong guarantees, tool use + schema remains the most robust option; prefill is the lightweight tool-free technique.` },
 
-  { type:"vf",
+  { type:"vf", sub:"4.2", lvl:"basic", src:"core",
     question:`Asking the model to reason step by step (chain-of-thought) reduces the latency and cost of each request.`,
     correct:"F",
     answer:`**False.** Chain-of-thought **increases** output tokens → more latency and cost.
@@ -1185,7 +1482,7 @@ The exam loves this trade-off: latency vs cost.` },
 - It is a trade-off: use it where the difficulty warrants it; for trivial tasks it is pure overhead.
 - Tip: request the reasoning in a tag (<thinking>) separate from the final answer (<answer>) so you can discard it in post-processing.` },
 
-  { type:"open",
+  { type:"open", sub:"4.4", lvl:"advanced", src:"core",
     question:`Design the prompting approach for a high-precision invoice data extraction pipeline. Which techniques do you combine and why?`,
     answer:`- **Structured output via tool use + JSON schema**, with **tool_choice** forced: eliminates syntax errors and guarantees the shape (fields, types, enums).
 - **Explicit inclusion/exclusion criteria**: what each field is, formats (ISO dates, amounts with decimals), what NOT to extract; edge cases named.
@@ -1196,7 +1493,7 @@ The exam loves this trade-off: latency vs cost.` },
 - **Instrumentation**: fields like detected_pattern/confidence to analyze systematic errors.
 - **Batch API** if the volume is massive and latency-tolerant (50% savings), with **custom_id** for partial recovery.` },
 
-  { type:"vf",
+  { type:"vf", sub:"4.1", lvl:"basic", src:"core",
     question:`For a deterministic extraction task, a high temperature is advisable so the model explores more possibilities.`,
     correct:"F",
     answer:`**False.** High temperature = more randomness → the enemy of deterministic extraction.
@@ -1204,7 +1501,7 @@ The exam loves this trade-off: latency vs cost.` },
 - High temperature is reserved for **creative** tasks (brainstorming, copy variants).
 - Rule: adjust temperature to the task type, and never tune it together with top_p at the same time.` },
 
-  { type:"vf",
+  { type:"vf", sub:"4.3", lvl:"intermediate", src:"repos",
     question:`Forcing structured output via tool use with a JSON schema guarantees that the extracted values are factually correct.`,
     correct:"F",
     answer:`**False.** Tool use with a schema guarantees **syntactic** correctness — valid JSON, right field names and types — **by construction**.
@@ -1212,7 +1509,7 @@ The exam loves this trade-off: latency vs cost.` },
 - That is why structured output is paired with **programmatic validation** (arithmetic checks, range checks, cross-field consistency) and retry-with-feedback loops.
 - Exam trap: "schema = correct data" is a distractor; schema = correct **shape**.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.3", lvl:"intermediate", src:"repos",
     question:`Some documents legitimately lack certain fields (no tax ID on foreign invoices). How should the extraction schema handle this?`,
     options:[
       `Make every field required so nothing is missed.`,
@@ -1225,7 +1522,7 @@ The exam loves this trade-off: latency vs cost.` },
 - \`"tax_id": {"type": ["string", "null"]}\` lets the output state "not present" as data.
 - Pair with an instruction and a few-shot example showing a null extraction, so the model knows absence is an acceptable answer.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.5", lvl:"intermediate", src:"repos",
     question:`You are about to batch-process 80,000 documents with a new extraction prompt. What should happen first?`,
     options:[
       `Submit the full batch — the 50% discount makes failures cheap.`,
@@ -1238,7 +1535,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Then scale to the full batch, where each prompt defect would otherwise be multiplied by 80,000 — discounted wasted tokens are still wasted, and reruns cost real time (batches can take up to 24 h).
 - Sample selection matters: it must reflect the true distribution, including the ugly formats.` },
 
-  { type:"mc",
+  { type:"mc", sub:"4.4", lvl:"advanced", src:"repos",
     question:`An extraction pipeline reports 96% aggregate accuracy, and the team wants to automate fully. Why can this number be misleading, and what should be measured instead?`,
     options:[
       `96% is below any automation threshold.`,
@@ -1250,12 +1547,38 @@ The exam loves this trade-off: latency vs cost.` },
 - 96% overall can coexist with 60% on one document type that is only 10% of volume — full automation would silently mangle that subset.
 - Measure **per document type and per field**; automate the segments that clear the bar, route the weak segments to human review or targeted prompt work.
 - This is the LLM version of a classic ML lesson: never ship on a single aggregate number.` },
+
+  { type:"mc", sub:"4.5", lvl:"advanced", src:"ptest",
+    question:`A team wants to move an agentic workflow (the model calls tools, gets results, continues) to the Message Batches API for the 50% discount. What is the blocker?`,
+    options:[
+      `Batches are limited to 100 requests.`,
+      `The Batch API has no mechanism to execute tools mid-request and continue the conversation: each batch request is a single, self-contained call, so iterative tool loops are incompatible.`,
+      `Batch requests cannot include system prompts.`,
+      `The discount only applies to output tokens.`],
+    correct:1,
+    answer:`A batch request is **fire-and-forget**: it runs to completion without anyone executing tool calls in the middle.
+- If the model emits tool_use in a batch, nobody is there to run the tool and send the result — the loop cannot continue.
+- Batch fits **single-shot** work (classify, extract, summarize). Agentic loops need the synchronous API.
+- You CAN batch the single-shot pieces of a pipeline while keeping the interactive loop synchronous.` },
+
+  { type:"mc", sub:"4.1", lvl:"intermediate", src:"ptest",
+    question:`Developers have lost trust in an automated reviewer: style and naming findings are ~50% false positives, while security findings are ~8%. What is the pragmatic recovery move?`,
+    options:[
+      `Turn the whole reviewer off until it is perfect.`,
+      `Temporarily disable the high-false-positive categories (style, naming) while keeping the high-precision ones (security), then fix the noisy categories' criteria before re-enabling.`,
+      `Keep everything on but add a disclaimer.`,
+      `Route all findings to a manager instead.`],
+    correct:1,
+    answer:`**Trust is the product** of an automated reviewer: once developers start ignoring it, even the good findings die.
+- Disable the noisy categories (they are net-negative at 50% FP), keep the precise ones delivering value.
+- Rework the noisy categories' criteria (explicit inclusion/exclusion rules, examples) offline, measure, then re-enable.
+- All-or-nothing (A) throws away the working 8%-FP security signal.` },
 ]},
 
 /* ============ DOMAIN 5: CONTEXT & RELIABILITY (15%) ============ */,
 
 { id:"context", name:"📚 Context & Reliability (15%)", questions:[
-  { type:"mc",
+  { type:"mc", sub:"5.1", lvl:"basic", src:"core",
     question:`What is the standard context window of current Claude models (generation 4 Sonnet/Opus/Haiku)?`,
     options:[
       `32,000 tokens`,
@@ -1267,7 +1590,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Some models (e.g. Sonnet 4/4.5) offer **1 million tokens** in beta via a specific header.
 - The window includes EVERYTHING: system prompt, history, tool definitions, tool results, and the response in progress.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.1", lvl:"basic", src:"core",
     question:`With prompt caching, how much does reading cached tokens cost relative to the normal input price?`,
     options:[
       `The same.`,
@@ -1279,7 +1602,7 @@ The exam loves this trade-off: latency vs cost.` },
 - **Writing** to the cache costs **25% more** than normal input (for the 5-minute TTL).
 - With large, stable prefixes (system prompt + tools + documents), the net savings and latency improvement are enormous in repetitive workloads.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.1", lvl:"basic", src:"core",
     question:`What is the default TTL (time to live) of prompt caching, and what alternative exists?`,
     options:[
       `1 minute, with no alternatives.`,
@@ -1291,14 +1614,14 @@ The exam loves this trade-off: latency vs cost.` },
 - A **1-hour** option for more spaced-out traffic (higher write cost: 2x vs the 1.25x of the 5-minute one).
 - Choose 1 h when the intervals between requests exceed 5 min (e.g. agent sessions with long human pauses).` },
 
-  { type:"vf",
+  { type:"vf", sub:"5.1", lvl:"intermediate", src:"core",
     question:`Writing to the prompt cache costs more than processing those same tokens as normal input.`,
     correct:"V",
     answer:`**True.** Cache writes carry a surcharge: **+25%** over the input price (5-min TTL) or **2x** (1-h TTL).
 - The payoff is in the **reads**: each hit costs ~10% of normal input.
 - Conclusion: caching pays off when the prefix is **reused** several times within the TTL; for one-off requests it is a loss.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.1", lvl:"intermediate", src:"core",
     question:`A developer enables prompt caching but the hit rate is 0%. Their system prompt includes a timestamp updated on every request. What is the problem?`,
     options:[
       `Caching requires an enterprise plan.`,
@@ -1310,7 +1633,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Golden rule: **stable content first, variable content last** — order: tools → system → history; dynamic content (date, user data) after the cache breakpoint.
 - Also: the cacheable minimum is **1024 tokens** on most models, and breakpoints are marked with **cache_control** (up to 4).` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.1", lvl:"intermediate", src:"core",
     question:`What is the minimum cacheable prefix size on most Claude models?`,
     options:[`128 tokens`,`512 tokens`,`1024 tokens`,`4096 tokens`],
     correct:2,
@@ -1318,7 +1641,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Prefixes below the minimum are not cached even if you mark cache_control.
 - Up to **4** cache breakpoints can be defined per request.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.2", lvl:"intermediate", src:"core",
     question:`A support agent conversation exceeds 100 interactions and is approaching the context limit. What is the standard strategy?`,
     options:[
       `Cut off the conversation and start from scratch without warning.`,
@@ -1330,7 +1653,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Complements: external memory (a file/DB where the agent persists notes) and cleanup of old tool results.
 - Starting from scratch (A) loses the state; the user would have to repeat everything.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.1", lvl:"basic", src:"core",
     question:`How do you estimate how many tokens a request will consume BEFORE sending it, at no cost?`,
     options:[
       `By counting characters and dividing by 4.`,
@@ -1342,7 +1665,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Use it to: decide whether compaction is needed, budget costs, validate that a document fits in the window.
 - The characters/4 heuristic (A) is a rough approximation; the real count depends on the tokenizer.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.3", lvl:"basic", src:"core",
     question:`Your application receives 429 errors from the API during peak hours. What is the correct handling?`,
     options:[
       `Retry immediately in a tight loop until it passes.`,
@@ -1356,7 +1679,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Structural: smooth peaks with queues, spread load, or request a limit increase.
 - Rotating keys (D) violates the terms of use.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.3", lvl:"basic", src:"core",
     question:`What does an HTTP 529 error from the Anthropic API mean and how is it handled?`,
     options:[
       `Invalid API key; regenerate credentials.`,
@@ -1369,7 +1692,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Quick error reference: **400** invalid request · **401** authentication · **403** permissions · **413** request too large · **429** rate limit · **500** internal error · **529** overloaded.
 - Reliable design: classify errors as retryable (429/500/529) vs non-retryable (400/401/403).` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.4", lvl:"intermediate", src:"core",
     question:`An agent must answer questions about a multi-million-line codebase that does not fit in the context. What is the correct approach?`,
     options:[
       `Concatenate all the files until the window is full and truncate the rest.`,
@@ -1382,7 +1705,7 @@ The exam loves this trade-off: latency vs cost.` },
 - **Subagents** to explore areas in parallel without burning the main context (each one returns a synthesis).
 - Arbitrary truncation (A) very likely leaves out what matters; the "agentic search" approach is what Claude Code itself uses.` },
 
-  { type:"vf",
+  { type:"vf", sub:"5.4", lvl:"basic", src:"core",
     question:`In prompts with long documents, it is best to place the documents at the beginning of the prompt and the question/instructions at the end.`,
     correct:"V",
     answer:`**True.** This is Anthropic's guidance for long-context:
@@ -1390,7 +1713,7 @@ The exam loves this trade-off: latency vs cost.` },
 - With long inputs, placing the query at the end measurably improves response quality.
 - Bonus: asking it to **quote relevant passages** before answering anchors the response in the actual text and reduces hallucination.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.5", lvl:"intermediate", src:"core",
     question:`In a report generated by a multi-agent system, the client asks "where did this figure come from?" and nobody can answer. What design principle was missing?`,
     options:[
       `More creativity in the synthesis.`,
@@ -1403,7 +1726,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Without structured metadata, the first summary destroys the claim↔source link and the system becomes unauditable.
 - Critical in regulated or client-facing domains.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.6", lvl:"basic", src:"core",
     question:`Which agent actions warrant mandatory human approval (human-in-the-loop) in production?`,
     options:[
       `All of them: every tool call must be approved by hand.`,
@@ -1416,7 +1739,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Reversible, low-risk actions (reads, drafts, staging) can be autonomous — approving EVERYTHING (A) destroys the value of automation.
 - Implementation: permissions/hooks that intercept the sensitive actions and request confirmation (not an instruction in the prompt).` },
 
-  { type:"vf",
+  { type:"vf", sub:"5.6", lvl:"intermediate", src:"core",
     question:`Since a model's results can vary between runs, it makes no sense to write automated tests for LLM-based systems.`,
     correct:"F",
     answer:`**False.** Variability demands **evaluations (evals)**, not resignation:
@@ -1425,7 +1748,7 @@ The exam loves this trade-off: latency vs cost.` },
 - **LLM-as-judge** with a rubric for subjective quality.
 - Run the evals on every prompt/model change: it is the equivalent of regression tests in classic software.` },
 
-  { type:"open",
+  { type:"open", sub:"5.2", lvl:"advanced", src:"core",
     question:`Context management strategies for a long-running agent: name at least five concrete techniques.`,
     answer:`- **Compaction/summarization**: summarize the old history preserving key facts, decisions, and state; keep the recent messages intact.
 - **External memory**: the agent persists notes/state to files or a DB and re-reads them when needed (the context stops being the only storage).
@@ -1435,7 +1758,7 @@ The exam loves this trade-off: latency vs cost.` },
 - **Targeted retrieval (RAG/search)**: load only what is relevant to the current task instead of the whole corpus.
 - **Token counting** (free) to monitor consumption and trigger compaction in time.` },
 
-  { type:"open",
+  { type:"open", sub:"5.3", lvl:"advanced", src:"core",
     question:`Design the error handling and reliability strategy for a production application built on the Claude API.`,
     answer:`- **Error classification**: retryable (**429** rate limit, **500** internal, **529** overloaded, timeouts) vs non-retryable (**400** invalid request, **401/403** credentials/permissions).
 - **Exponential backoff with jitter** for the retryable ones, honoring **retry-after**; a retry limit.
@@ -1447,7 +1770,7 @@ The exam loves this trade-off: latency vs cost.` },
 - **Observability**: logging of requests/stop_reasons/errors, latency and failure-rate metrics, alerts.
 - **Regression evals** on every prompt or model change.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.2", lvl:"advanced", src:"repos",
     question:`After several rounds of conversation summarization, an agent "remembers" that a customer needs "a refund" but has lost the exact figure "$247.83 by Friday". What is the mitigation?`,
     options:[
       `Summarize less often but more aggressively.`,
@@ -1459,7 +1782,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Mitigation: a **persistent fact block** (structured key facts, injected verbatim outside the summarized history) or external memory the agent re-reads.
 - Split the state: **narrative** can be compressed; **precise facts** must survive verbatim.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.5", lvl:"advanced", src:"repos",
     question:`Two sources give different values for the same figure (a company's employee count). The extraction pipeline currently keeps whichever it saw last. What is the correct design?`,
     options:[
       `Keep the larger number.`,
@@ -1472,7 +1795,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Downstream logic (or a human) then resolves it with full information: recency, source reliability, definitional differences.
 - Silent last-write-wins produces confident wrong answers — the worst failure mode for a data pipeline.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.5", lvl:"advanced", src:"repos",
     question:`A research agent finds a 2021 source saying a product "does not support SSO" and a 2025 source saying it does. How does the pipeline distinguish a real contradiction from normal change over time?`,
     options:[
       `Trust the source with the longer document.`,
@@ -1485,7 +1808,7 @@ The exam loves this trade-off: latency vs cost.` },
 - Two sources from the **same period** disagreeing is a genuine conflict → conflict handling (preserve both, attribute, flag).
 - Without dates, the pipeline cannot tell these two situations apart.` },
 
-  { type:"mc",
+  { type:"mc", sub:"5.2", lvl:"advanced", src:"repos",
     question:`A long-running agent session must be abandoned (context exhausted, degraded quality). The work is half done. What is the recommended recovery pattern?`,
     options:[
       `Resume the same session and hope quality recovers.`,
@@ -1497,5 +1820,94 @@ The exam loves this trade-off: latency vs cost.` },
 - The checkpoint captures the durable state: what was completed, key decisions and why, what remains, relevant file/data locations.
 - The fresh session starts clean (no degraded, bloated history) but **informed** — inject the checkpoint as structured context with explicit instructions on how to continue.
 - Copying the raw transcript (D) imports the bloat you were escaping; restarting from zero (C) throws away paid-for work.` },
+
+  { type:"mc", sub:"5.3", lvl:"advanced", src:"ptest",
+    question:`In a research pipeline, one of five subagents failed and its sources went unanalyzed. The final report must still ship. How should the failure be represented?`,
+    options:[
+      `Ship the report without mentioning the gap.`,
+      `Include coverage annotations: state which conclusions are well-supported and which areas have data gaps due to the failed analysis, so readers can weigh the conclusions accordingly.`,
+      `Delay the report until the subagent is fixed.`,
+      `Fill the gap with the coordinator's best guess.`],
+    correct:1,
+    answer:`**Graceful degradation with honest coverage annotations**:
+- The report states its own limits: "sources X–Y unanalyzed; conclusions in section Z rest on partial data."
+- Readers can then calibrate trust per conclusion instead of over-trusting a silently incomplete report.
+- Guessing (D) is fabrication; silence (A) turns a known gap into an unknown one — the most dangerous kind.` },
+
+  { type:"mc", sub:"5.6", lvl:"basic", src:"ptest",
+    question:`A support agent faces a request that existing policy does not cover (the policy is silent on this case). The agent has authority to resolve "per policy". What should it do?`,
+    options:[
+      `Resolve the case using its best judgment of what the policy would say.`,
+      `Escalate to a human: where policy is silent, the agent must not invent policy — deciding uncovered cases is exactly what escalation is for.`,
+      `Deny the request by default.`,
+      `Ask the customer what the policy should be.`],
+    correct:1,
+    answer:`**Policy gaps are escalation triggers**, not judgment calls:
+- The agent's mandate is to apply policy, not to create it; an invented resolution sets precedent nobody approved.
+- Blanket denial (C) is also policy invention — just in the other direction.
+- Design the agent with an explicit rule: "if no policy covers the case → escalate with full case context."` },
+
+  { type:"mc", sub:"5.6", lvl:"basic", src:"ptest",
+    question:`A lookup tool returns three customers matching the name the user gave. What should the agent do next?`,
+    options:[
+      `Pick the first result — it's usually right.`,
+      `Ask the user for an additional identifier (email, phone, order number) to disambiguate before acting on any account.`,
+      `Apply the action to all three to be safe.`,
+      `Fail the request.`],
+    correct:1,
+    answer:`**Ambiguity about identity is never resolved by guessing** — acting on the wrong account is a serious, sometimes irreversible error.
+- The agent should request a **discriminating identifier** and proceed only with a unique match.
+- Generalizes to a core reliability rule: when input is ambiguous and the action has consequences, **clarify before acting** (and design tools to report multiplicity, not just "first hit").` },
+
+  { type:"mc", sub:"5.4", lvl:"intermediate", src:"video1",
+    question:`A RAG-based assistant sometimes produces answers built on irrelevant retrieved chunks. Why is retrieval quality a first-class reliability concern?`,
+    options:[
+      `Because retrieval determines the token bill.`,
+      `The model treats retrieved chunks as trustworthy context: irrelevant or low-quality chunks flow straight into the answer, so garbage retrieval yields confident garbage answers.`,
+      `Because retrieval is the slowest pipeline stage.`,
+      `It isn't — the model filters bad chunks automatically.`],
+    correct:1,
+    answer:`The model **weighs what you give it**: retrieved chunks arrive with implicit authority, and the model synthesizes from them even when they are off-topic.
+- Reliability work therefore lives in the **retrieval layer**: relevance thresholds, reranking, filtering, and "no good source found" as an honest outcome.
+- Also instruct the model to **cite which chunks support the answer** and to say when none do — making bad retrieval visible instead of silently absorbed.` },
+
+  { type:"mc", sub:"5.1", lvl:"intermediate", src:"video1",
+    question:`"Just use the biggest context window for everything." What does this ignore?`,
+    options:[
+      `Nothing — bigger context is strictly better.`,
+      `Cost and latency scale with context size, and very long contexts can still degrade attention to early or middle details — capacity is not the same as effective use.`,
+      `Bigger windows require special API keys.`,
+      `Long contexts disable tool use.`],
+    correct:1,
+    answer:`Trade-offs of long context:
+- **Cost**: every token in the window is billed on every request.
+- **Latency**: processing time grows with input size.
+- **Attention**: models can under-attend to material buried early/middle in very long prompts ("lost in the middle").
+Curation beats capacity: targeted retrieval + good prompt ordering usually outperforms stuffing the window because you can.` },
+
+  { type:"mc", sub:"5.2", lvl:"intermediate", src:"video1",
+    question:`A support agent handles multi-issue conversations spanning dozens of turns. Beyond periodic summarization, what should its design maintain?`,
+    options:[
+      `A longer system prompt.`,
+      `Explicit state tracking — which issues are resolved and which are pending — as structured data, instead of hoping the state stays inferable from raw history.`,
+      `One conversation per issue, forcibly.`,
+      `A higher temperature for flexibility.`],
+    correct:1,
+    answer:`Long multi-issue conversations need **explicit state**:
+- A structured tracker ({issue, status: resolved/pending, next_action}) that is updated as the conversation progresses and survives summarization.
+- Inferring state from raw history degrades as the history grows and gets compacted — resolved issues resurface, pending ones get dropped.
+- Combines with the persistent fact block: state + precise facts live outside the compressible narrative.` },
+
+  { type:"mc", sub:"5.6", lvl:"intermediate", src:"video2",
+    question:`An agent escalates to humans "when its confidence drops below 70%", and the mechanism misfires constantly. What is wrong with the design?`,
+    options:[
+      `The threshold should be 50%.`,
+      `Self-reported confidence is not a valid signal — a model can be fully confident and wrong. Escalation must key on explicit observable conditions: customer requests a human, a policy gap is hit, or N attempts have failed to progress.`,
+      `Escalation should be removed since it misfires.`,
+      `Two models should average their confidence scores.`],
+    correct:1,
+    answer:`**Confidence-based gating is an anti-pattern**: model self-assessment does not correlate reliably with correctness (confidently wrong is the norm, not the exception).
+- Replace with **observable triggers**: explicit human request, defined policy gap or violation, repeated failure to progress (N attempts), high-stakes action classes.
+- Averaging confidences (D) compounds the mistake — the signal itself is invalid, not insufficiently sampled.` },
 ]},
 ];

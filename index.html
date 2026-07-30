@@ -59,6 +59,28 @@
   .tag.mc{background:#12303b;color:#5ac8e0}
   .tag.open{background:#2b2018;color:var(--accent2)}
   .tag.mod{background:#22262e;color:var(--muted)}
+  .tag.basic{background:#12261a;color:#4cc38a}
+  .tag.intermediate{background:#2b2312;color:#e2b93b}
+  .tag.advanced{background:#2a1416;color:#f97583}
+  .tag.srcx{background:#1a2030;color:#8aa4c8}
+  /* sesiones */
+  .overlay{position:fixed;inset:0;background:rgba(5,8,12,.82);backdrop-filter:blur(4px);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:20px}
+  .loginbox{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:400px;width:100%}
+  .loginbox h2{margin:0 0 6px}
+  .loginbox p{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+  .loginbox input{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--txt);
+    border-radius:10px;padding:11px 12px;font-size:15px;margin-bottom:10px}
+  .loginbox .err{color:var(--bad);font-size:12.5px;min-height:16px;margin-bottom:6px}
+  .plist{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+  .pitem{padding:9px 12px;border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:14px}
+  .pitem:hover{border-color:var(--accent)}
+  .userchip{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);
+    border-radius:20px;padding:5px 12px;font-size:13px;cursor:pointer;max-width:230px}
+  .userchip b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bell{background:var(--panel2);border:1px solid var(--border);border-radius:50%;width:34px;height:34px;
+    cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+  .bell.on{border-color:var(--accent);background:#2b2018}
   .qnum{color:var(--muted);font-size:13px;margin-left:auto}
   .question{font-size:19px;font-weight:650;margin:2px 0 16px;white-space:pre-wrap}
   .opts{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
@@ -130,9 +152,12 @@
   </div>
   <div class="spacer"></div>
   <input id="search" class="search" placeholder="🔍 Buscar…" style="display:none" />
+  <button class="bell" id="bell" title="Recordatorios de estudio">🔔</button>
+  <div id="userbox"></div>
 </header>
+<div id="loginOverlay" class="overlay" style="display:none"></div>
 <div id="app"></div>
-<footer>estudio local para el Claude Certified Architect – Foundations (CCA-F) · 60 preguntas / 120 min / 720 de 1000 para aprobar · tu progreso se guarda en este navegador</footer>
+<footer>Claude Certified Architect – Foundations (CCA-F) · 60 preguntas / 120 min / 720 de 1000 para aprobar · sesión por email, progreso guardado por usuario en este navegador</footer>
 
 <script src="data/questions.js"></script>
 <script src="data/matches.js"></script>
@@ -143,11 +168,100 @@ const MATCH=(window.MATCH_DATA||[]);
 const ALL=[];
 DATA.forEach(m=>m.questions.forEach(q=>ALL.push({...q,module:m.id,moduleName:m.name})));
 ALL.forEach((q,i)=>q._gid='q'+i);
-const LS='claudecert_ccaf_v1';
-const state=JSON.parse(localStorage.getItem(LS)||'{}');
+
+/* ---------- taxonomía (blueprint: dominios → subdominios) ---------- */
+const SUBS={
+ '1.1':'Agentic loop design','1.2':'Coordinator–subagent patterns','1.3':'Subagent spawning & context',
+ '1.4':'Workflow enforcement & guardrails','1.5':'Agent SDK hooks','1.6':'Task decomposition & patterns','1.7':'Session management',
+ '2.1':'Tool interface design','2.2':'Structured error handling','2.3':'Tool distribution & tool_choice',
+ '2.4':'MCP servers & config','2.5':'Built-in tools',
+ '3.1':'CLAUDE.md & memory','3.2':'Slash commands & skills','3.3':'Path-scoped rules','3.4':'Plan vs direct execution',
+ '3.5':'Iterative refinement','3.6':'CI/CD & headless','3.7':'Settings, hooks & permissions',
+ '4.1':'Precision & criteria','4.2':'Few-shot & prompt structure','4.3':'Structured output','4.4':'Validation & retry',
+ '4.5':'Batch processing','4.6':'Multi-pass workflows',
+ '5.1':'Context window & caching','5.2':'Long conversations & memory','5.3':'Errors & resilience',
+ '5.4':'Retrieval at scale','5.5':'Provenance & auditability','5.6':'Evaluation & oversight'};
+const SRC_LABELS={core:'core bank',repos:'community repos',ptest:'practical test',video1:'YT · 50Q',video2:'YT · traps',generated:'auto'};
+const LVL_LABELS={basic:'Básico',intermediate:'Intermedio',advanced:'Avanzado'};
+
+/* ---------- sesiones / perfiles ---------- */
+const PKEY='cc_profiles';
+let profiles=JSON.parse(localStorage.getItem(PKEY)||'{"users":[],"current":null}');
+function saveProfiles(){localStorage.setItem(PKEY,JSON.stringify(profiles))}
+function curUser(){return profiles.users.find(u=>u.email===profiles.current)}
+const LSBASE='claudecert_ccaf_v1';
+let LS=LSBASE,state={};
+function loadState(){LS=profiles.current?LSBASE+'::'+profiles.current:LSBASE;state=JSON.parse(localStorage.getItem(LS)||'{}')}
 function save(){localStorage.setItem(LS,JSON.stringify(state))}
 function stt(gid){return (state[gid]||{}).status||null}
-function setSt(gid,s){state[gid]={status:s};save()}
+function setSt(gid,s){state[gid]={status:s};save();const u=curUser();if(u){u.lastStudy=Date.now();saveProfiles()}}
+loadState();
+
+function renderUserbox(){
+  const box=document.getElementById('userbox');const u=curUser();
+  box.innerHTML=u?`<div class="userchip" title="Cambiar de usuario"><b>👤 ${u.email}</b></div>`:'';
+  const chip=box.querySelector('.userchip');if(chip)chip.onclick=()=>showLogin(true);
+  const bell=document.getElementById('bell');
+  bell.classList.toggle('on',!!(u&&u.notif));
+  bell.onclick=toggleNotif;
+}
+function showLogin(allowClose){
+  const ov=document.getElementById('loginOverlay');
+  const others=profiles.users.map(u=>`<div class="pitem" data-e="${u.email}">👤 ${u.email}</div>`).join('');
+  ov.innerHTML=`<div class="loginbox">
+    <h2>🎓 claudeCert</h2>
+    <p>Iniciá sesión con tu email. Tu progreso (dominadas, repasar, rachas) se guarda por usuario en este navegador.</p>
+    <input id="liEmail" type="email" placeholder="tu@email.com" autocomplete="email"/>
+    <div class="err" id="liErr"></div>
+    <button class="btn" id="liGo" style="width:100%">Entrar</button>
+    ${others?`<p style="margin-top:16px">o continuá como:</p><div class="plist">${others}</div>`:''}
+    ${allowClose?'<button class="btn ghost" id="liClose" style="width:100%;margin-top:8px">Cancelar</button>':''}
+  </div>`;
+  ov.style.display='flex';
+  const go=()=>{
+    const em=document.getElementById('liEmail').value.trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){document.getElementById('liErr').textContent='Ingresá un email válido.';return}
+    login(em);
+  };
+  document.getElementById('liGo').onclick=go;
+  document.getElementById('liEmail').onkeydown=e=>{if(e.key==='Enter')go()};
+  ov.querySelectorAll('.pitem').forEach(p=>p.onclick=()=>login(p.dataset.e));
+  const c=document.getElementById('liClose');if(c)c.onclick=()=>ov.style.display='none';
+  setTimeout(()=>document.getElementById('liEmail').focus(),50);
+}
+function login(email){
+  let u=profiles.users.find(x=>x.email===email);
+  const isNew=!u;
+  if(isNew){u={email,notif:false,lastStudy:null};profiles.users.push(u)}
+  profiles.current=email;saveProfiles();
+  // migrar progreso anónimo previo al primer perfil creado
+  if(isNew&&!localStorage.getItem(LSBASE+'::'+email)&&localStorage.getItem(LSBASE)){
+    localStorage.setItem(LSBASE+'::'+email,localStorage.getItem(LSBASE));
+  }
+  loadState();
+  document.getElementById('loginOverlay').style.display='none';
+  renderUserbox();setMode(mode);checkReminder();
+}
+
+/* ---------- notificaciones push (recordatorios de estudio) ---------- */
+async function toggleNotif(){
+  const u=curUser();if(!u){showLogin(false);return}
+  if(!('Notification' in window)){alert('Este navegador no soporta notificaciones.');return}
+  if(!u.notif){
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){alert('Permiso de notificaciones denegado por el navegador.');return}
+    u.notif=true;saveProfiles();renderUserbox();
+    new Notification('claudeCert 🎓',{body:'Recordatorios activados: te avisamos cuando pase más de un día sin estudiar (con la página abierta).'});
+  } else {u.notif=false;saveProfiles();renderUserbox()}
+}
+function checkReminder(){
+  const u=curUser();
+  if(!u||!u.notif||!('Notification' in window)||Notification.permission!=='granted')return;
+  if(!u.lastStudy||Date.now()-u.lastStudy>20*3600*1000){
+    new Notification('claudeCert 🎓 — hora de estudiar',{body:'Tu preparación CCA-F espera: hacé al menos 10 preguntas hoy.'});
+  }
+}
+setInterval(checkReminder,3600*1000);
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function mdToHtml(t){if(!t)return'';t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
@@ -160,11 +274,13 @@ const search=document.getElementById('search');
 let mode='estudio';
 
 /* ============ MODO ESTUDIO ============ */
-let curModule=DATA.length?DATA[0].id:null,filter='all',list=[],idx=0,order=[];
+let curModule=DATA.length?DATA[0].id:null,filter='all',lvlFilter='all',subFilter='all',list=[],idx=0,order=[];
 function activeList(){
   let l=ALL.filter(q=>q.module===curModule);
   if(filter==='review')l=l.filter(q=>stt(q._gid)==='review');
   else if(filter==='unseen')l=l.filter(q=>!stt(q._gid));
+  if(lvlFilter!=='all')l=l.filter(q=>q.lvl===lvlFilter);
+  if(subFilter!=='all')l=l.filter(q=>q.sub===subFilter);
   const term=search.value.trim().toLowerCase();
   if(term)l=ALL.filter(q=>(q.question+' '+(q.answer||'')).toLowerCase().includes(term));
   return l;
@@ -176,6 +292,12 @@ function renderEstudio(){
       <span class="chip" data-f="all">Todas</span>
       <span class="chip" data-f="review">⚑ Repasar</span>
       <span class="chip" data-f="unseen">Sin ver</span>
+      <span style="color:var(--border)">|</span>
+      <span class="chip" data-l="all">Nivel: todos</span>
+      <span class="chip" data-l="basic">Básico</span>
+      <span class="chip" data-l="intermediate">Intermedio</span>
+      <span class="chip" data-l="advanced">Avanzado</span>
+      <select id="subsel" title="Subdominio"></select>
       <button class="btn ghost" id="shuffle">🔀 Mezclar</button>
       <div class="progresswrap"><span id="ptext"></span><span class="pbar"><i id="pbar"></i></span></div>
     </div>
@@ -185,8 +307,17 @@ function renderEstudio(){
   document.getElementById('shuffle').onclick=()=>{buildOrder();order=shuffle(order);idx=0;drawCard()};
   document.getElementById('prev').onclick=()=>{idx=(idx-1+list.length)%list.length;drawCard()};
   document.getElementById('next').onclick=()=>{idx=(idx+1)%list.length;drawCard()};
-  app.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{filter=c.dataset.f;idx=0;drawCard()});
+  app.querySelectorAll('.chip[data-f]').forEach(c=>c.onclick=()=>{filter=c.dataset.f;idx=0;drawCard()});
+  app.querySelectorAll('.chip[data-l]').forEach(c=>c.onclick=()=>{lvlFilter=c.dataset.l;idx=0;drawCard()});
+  document.getElementById('subsel').onchange=e=>{subFilter=e.target.value;idx=0;drawCard()};
   buildOrder();drawCard();
+}
+function fillSubsel(){
+  const sel=document.getElementById('subsel');if(!sel)return;
+  const subs=[...new Set(ALL.filter(q=>q.module===curModule).map(q=>q.sub))].sort();
+  if(subFilter!=='all'&&!subs.includes(subFilter))subFilter='all';
+  sel.innerHTML=`<option value="all">Subdominio: todos</option>`+
+    subs.map(s=>`<option value="${s}" ${s===subFilter?'selected':''}>${s} · ${SUBS[s]||s}</option>`).join('');
 }
 function buildOrder(){list=activeList();order=list.map((_,i)=>i)}
 function renderSidebar(){
@@ -203,13 +334,14 @@ function renderSidebar(){
   });
 }
 function drawCard(){
-  renderSidebar();
+  renderSidebar();fillSubsel();
   const host=document.getElementById('cardHost');if(!host)return;
   buildOrder();
   const known=ALL.filter(q=>stt(q._gid)==='known').length;
   document.getElementById('ptext').textContent=known+' / '+ALL.length+' dominadas';
   document.getElementById('pbar').style.width=(ALL.length?known/ALL.length*100:0)+'%';
-  app.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f===filter));
+  app.querySelectorAll('.chip[data-f]').forEach(c=>c.classList.toggle('on',c.dataset.f===filter));
+  app.querySelectorAll('.chip[data-l]').forEach(c=>c.classList.toggle('on',c.dataset.l===lvlFilter));
   if(!list.length){host.innerHTML='<div class="empty">No hay preguntas en esta vista.</div>';return}
   if(idx>=list.length)idx=0;
   const q=list[order[idx]],status=stt(q._gid);
@@ -220,7 +352,9 @@ function drawCard(){
     q.type==='mc'?`<div class="verdict v">Correcta: ${String.fromCharCode(65+q.correct)}) ${q.options[q.correct]}</div>`:'';
   host.innerHTML=`<div class="card">
     <div class="qmeta"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span>
-      <span class="tag mod">${q.moduleName}</span>
+      ${q.sub?`<span class="tag mod" title="Subdominio">${q.sub} · ${SUBS[q.sub]||''}</span>`:`<span class="tag mod">${q.moduleName}</span>`}
+      ${q.lvl?`<span class="tag ${q.lvl}">${LVL_LABELS[q.lvl]||q.lvl}</span>`:''}
+      ${q.src?`<span class="tag srcx" title="Fuente">${SRC_LABELS[q.src]||q.src}</span>`:''}
       ${status==='known'?'<span class="badge-known">✔ dominada</span>':status==='review'?'<span class="badge-review">⚑ repasar</span>':''}
       <span class="qnum">${idx+1} / ${list.length}</span></div>
     <div class="question">${q.question}</div>${optsHtml}
@@ -325,6 +459,16 @@ function renderExamen(){
     <div class="configrow"><span>Nº de desarrollo</span>
       <select id="exOpen"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></div>
     <button class="btn" id="exStart" style="width:100%;margin-top:10px">Comenzar examen</button>
+    <details style="margin-top:16px;color:var(--muted);font-size:13px"><summary style="cursor:pointer">🎯 Tips para el examen real</summary>
+      <ul style="margin:8px 0;padding-left:18px">
+        <li>Todo es escenario: rastreá <b>síntoma → causa raíz → fix</b>; la pista suele estar en el enunciado.</li>
+        <li>"Most effective <b>first step</b>" ≠ la solución más completa: gana el fix más simple y barato.</li>
+        <li>Si dice <b>must / never / guarantee</b> → la respuesta es determinística (hooks/código), nunca "mejor prompt".</li>
+        <li>Desconfiá de flags o variables muy específicas que no reconozcas: los distractores inventados son un patrón (no existen CLAUDE_HEADLESS ni --batch).</li>
+        <li>No agregues infraestructura nueva (routers, clasificadores) si un cambio de config o de descripciones alcanza.</li>
+        <li>La confianza autoreportada del modelo nunca es señal válida de escalamiento.</li>
+        <li>Marcá las difíciles y seguí: necesitás ~720/1000, no un puntaje perfecto.</li>
+      </ul></details>
   </div></div></main>`;
   document.getElementById('exStart').onclick=startExam;
 }
@@ -340,13 +484,13 @@ function buildExam(scope,nOpen){
   // 4 MC generadas desde los pares concepto/definición
   shuffle(catPairs).slice(0,4).forEach(p=>{
     const opts=shuffle([p.t,...pickTerms(p.cat,p.t,3)]);
-    q.push({type:'mc',question:`Which concept matches this definition?\n\n"${p.d}"`,options:opts,correct:opts.indexOf(p.t)});
+    q.push({type:'mc',src:'generated',lvl:'basic',question:`Which concept matches this definition?\n\n"${p.d}"`,options:opts,correct:opts.indexOf(p.t)});
   });
   // 4 VF generadas
   shuffle(catPairs).slice(4,8).forEach((p,k)=>{
     const tru=Math.random()<0.5;let d=p.d;
     if(!tru){const others=catPairs.filter(x=>x.t!==p.t);d=(shuffle(others)[0]||p).d;}
-    q.push({type:'vf',question:`The concept "${p.t}" is defined as:\n\n"${d}"`,correct:tru?'V':'F',
+    q.push({type:'vf',src:'generated',lvl:'basic',question:`The concept "${p.t}" is defined as:\n\n"${d}"`,correct:tru?'V':'F',
       answer:`The correct definition of "${p.t}" is: ${p.d}`});
   });
   // MC/VF reales del banco de preguntas dentro del alcance
@@ -376,7 +520,7 @@ function renderExamForm(){
       <button class="btn" id="exFinish">Finalizar y corregir</button></div>
     </div>`;
   exam.q.forEach((q,i)=>{
-    html+=`<div class="exq" id="exq${i}"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span><span class="qnum">Pregunta ${i+1}</span></div>
+    html+=`<div class="exq" id="exq${i}"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span>${q.sub?`<span class="tag mod">${q.sub}</span>`:''}${q.lvl&&q.lvl!=='basic'?`<span class="tag ${q.lvl}">${LVL_LABELS[q.lvl]}</span>`:''}<span class="qnum">Pregunta ${i+1}</span></div>
       <div class="question">${q.question}</div>`;
     if(q.type==='mc')html+='<div>'+q.options.map((o,j)=>`<div class="radio" data-q="${i}" data-v="${j}"><b>${String.fromCharCode(65+j)}</b> ${o}</div>`).join('')+'</div>';
     else if(q.type==='vf')html+='<div>'+['Verdadero','Falso'].map((o,j)=>`<div class="radio" data-q="${i}" data-v="${j===0?'V':'F'}">${o}</div>`).join('')+'</div>';
@@ -410,7 +554,7 @@ function renderExamResult(){
   let html=`<main><div class="stage"><div id="resHead"></div>`;
   exam.q.forEach((q,i)=>{
     const a=exam.ans[i];
-    html+=`<div class="exq"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span><span class="qnum">Pregunta ${i+1}</span></div>
+    html+=`<div class="exq"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span>${q.sub?`<span class="tag mod">${q.sub}</span>`:''}${q.lvl&&q.lvl!=='basic'?`<span class="tag ${q.lvl}">${LVL_LABELS[q.lvl]}</span>`:''}<span class="qnum">Pregunta ${i+1}</span></div>
       <div class="question">${q.question}</div>`;
     if(q.type==='mc'){
       html+='<div>'+q.options.map((o,j)=>{let cls='radio';if(j===q.correct)cls+=' rcorrect';if(String(a)===String(j)&&j!==q.correct)cls+=' rwrong';
@@ -474,7 +618,9 @@ document.addEventListener('keydown',e=>{
     if(e.key===' '){const r=document.getElementById('reveal');if(r&&r.style.display!=='none'){e.preventDefault();r.click()}}}
 });
 window.renderExamen=renderExamen;
+renderUserbox();
 setMode('estudio');
+if(!profiles.current)showLogin(false);else checkReminder();
 </script>
 </body>
 </html>
