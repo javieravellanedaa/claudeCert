@@ -81,6 +81,18 @@
   .bell{background:var(--panel2);border:1px solid var(--border);border-radius:50%;width:34px;height:34px;
     cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
   .bell.on{border-color:var(--accent);background:#2b2018}
+  /* código y diagramas embebidos */
+  .codeblock{background:#0a0e14;border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+    font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;color:#c9d6e3;
+    overflow-x:auto;white-space:pre;margin:0 0 14px;tab-size:2}
+  .diag{background:#0a0e14;border:1px solid var(--border);border-radius:10px;padding:10px;margin:0 0 14px}
+  .diag svg{width:100%;height:auto;display:block}
+  .verifycode{font-size:30px;font-weight:800;letter-spacing:.25em;text-align:center;background:#0a0e14;
+    border:1px dashed var(--warn);border-radius:10px;padding:12px;margin:10px 0;color:var(--warn)}
+  .demonote{background:#2b2312;border:1px solid var(--warn);border-radius:8px;padding:8px 12px;
+    font-size:12px;color:#e2b93b;margin:8px 0}
+  .dombar{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:13px}
+  .dombar .nm{min-width:210px;text-align:left;color:var(--muted)}
   .qnum{color:var(--muted);font-size:13px;margin-left:auto}
   .question{font-size:19px;font-weight:650;margin:2px 0 16px;white-space:pre-wrap}
   .opts{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
@@ -149,6 +161,7 @@
     <div class="tab on" data-mode="estudio">📇 Estudio</div>
     <div class="tab" data-mode="memoria">🧩 Memoria</div>
     <div class="tab" data-mode="examen">📝 Examen</div>
+    <div class="tab" data-mode="grupos">👥 Grupos</div>
   </div>
   <div class="spacer"></div>
   <input id="search" class="search" placeholder="🔍 Buscar…" style="display:none" />
@@ -159,8 +172,14 @@
 <div id="app"></div>
 <footer>Claude Certified Architect – Foundations (CCA-F) · 60 preguntas / 120 min / 720 de 1000 para aprobar · sesión por email, progreso guardado por usuario en este navegador</footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="js/cloud.js"></script>
 <script src="data/questions.js"></script>
 <script src="data/matches.js"></script>
+<script src="data/enrich.js"></script>
 <script>
 /* ---------- datos ---------- */
 const DATA=(window.STUDY_DATA||[]);
@@ -194,7 +213,31 @@ let LS=LSBASE,state={};
 function loadState(){LS=profiles.current?LSBASE+'::'+profiles.current:LSBASE;state=JSON.parse(localStorage.getItem(LS)||'{}')}
 function save(){localStorage.setItem(LS,JSON.stringify(state))}
 function stt(gid){return (state[gid]||{}).status||null}
-function setSt(gid,s){state[gid]={status:s};save();const u=curUser();if(u){u.lastStudy=Date.now();saveProfiles()}}
+function setSt(gid,s){const st=state[gid]||{};st.status=s;state[gid]=st;save();const u=curUser();if(u){u.lastStudy=Date.now();saveProfiles()}syncProgress()}
+/* registro de respuestas → repetición espaciada */
+function recAnswer(gid,ok){
+  const s=state[gid]||{};
+  s.a=(s.a||0)+1;
+  if(ok){s.c=(s.c||0)+1;s.streak=(s.streak||0)+1}else s.streak=0;
+  s.last=Date.now();
+  const days=[10/1440,1,3,7,14,30][Math.min(s.streak,5)];  // mal → 10 min; racha → 1/3/7/14/30 días
+  s.due=Date.now()+days*86400e3;
+  if(!s.status)s.status='seen';
+  state[gid]=s;save();
+  const u=curUser();if(u){u.lastStudy=Date.now();saveProfiles()}
+  syncProgress();
+}
+let _syncT=null;
+function syncProgress(){
+  if(!profiles.current)return;
+  clearTimeout(_syncT);
+  _syncT=setTimeout(()=>{
+    let known=0,seen=0,answered=0,correct=0;
+    Object.values(state).forEach(v=>{if(v.status==='known')known++;if(v.status)seen++;if(v.a){answered+=v.a;correct+=v.c||0}});
+    Cloud.pushProgress(profiles.current,{known,seen,answered,correct,total:ALL.length});
+  },1500);
+}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 loadState();
 
 function renderUserbox(){
@@ -207,32 +250,72 @@ function renderUserbox(){
 }
 function showLogin(allowClose){
   const ov=document.getElementById('loginOverlay');
-  const others=profiles.users.map(u=>`<div class="pitem" data-e="${u.email}">👤 ${u.email}</div>`).join('');
+  const others=profiles.users.filter(u=>u.verified).map(u=>`<div class="pitem" data-e="${u.email}">👤 ${u.email} <span style="color:var(--ok)">✔</span></div>`).join('');
   ov.innerHTML=`<div class="loginbox">
     <h2>🎓 claudeCert</h2>
-    <p>Iniciá sesión con tu email. Tu progreso (dominadas, repasar, rachas) se guarda por usuario en este navegador.</p>
+    <p>Registrate con tu email para guardar tu progreso${Cloud.enabled?' (sincronizado en la nube)':' en este navegador'} y unirte a grupos de estudio. ${Cloud.enabled?'Te enviaremos un <b>link de verificación</b> a tu casilla.':'Vas a validar un <b>código de verificación</b>.'}</p>
     <input id="liEmail" type="email" placeholder="tu@email.com" autocomplete="email"/>
     <div class="err" id="liErr"></div>
-    <button class="btn" id="liGo" style="width:100%">Entrar</button>
-    ${others?`<p style="margin-top:16px">o continuá como:</p><div class="plist">${others}</div>`:''}
+    <button class="btn" id="liGo" style="width:100%">Registrarme / Entrar</button>
+    ${others?`<p style="margin-top:16px">Sesiones ya verificadas en este navegador:</p><div class="plist">${others}</div>`:''}
     ${allowClose?'<button class="btn ghost" id="liClose" style="width:100%;margin-top:8px">Cancelar</button>':''}
   </div>`;
   ov.style.display='flex';
   const go=()=>{
     const em=document.getElementById('liEmail').value.trim().toLowerCase();
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){document.getElementById('liErr').textContent='Ingresá un email válido.';return}
-    login(em);
+    const u=profiles.users.find(x=>x.email===em);
+    if(u&&u.verified){finishLogin(em,false);return}   // ya verificado en este navegador
+    startVerification(em,allowClose);
   };
   document.getElementById('liGo').onclick=go;
   document.getElementById('liEmail').onkeydown=e=>{if(e.key==='Enter')go()};
-  ov.querySelectorAll('.pitem').forEach(p=>p.onclick=()=>login(p.dataset.e));
+  ov.querySelectorAll('.pitem').forEach(p=>p.onclick=()=>finishLogin(p.dataset.e,false));
   const c=document.getElementById('liClose');if(c)c.onclick=()=>ov.style.display='none';
   setTimeout(()=>document.getElementById('liEmail').focus(),50);
 }
-function login(email){
+async function startVerification(email,allowClose){
+  const ov=document.getElementById('loginOverlay');
+  ov.innerHTML=`<div class="loginbox"><h2>📨 Enviando verificación…</h2></div>`;
+  let r;
+  try{r=await Cloud.sendVerification(email)}
+  catch(e){ov.innerHTML=`<div class="loginbox"><h2>⚠️ Error</h2><p>${e.message||e}</p><button class="btn" id="liBack" style="width:100%">Volver</button></div>`;
+    document.getElementById('liBack').onclick=()=>showLogin(allowClose);return}
+  if(r.mode==='email'){
+    ov.innerHTML=`<div class="loginbox">
+      <h2>📬 Revisá tu correo</h2>
+      <p>Enviamos un <b>link de verificación</b> a <b>${email}</b>. Abrilo desde este dispositivo para completar el registro (mirá spam si no llega).</p>
+      <button class="btn ghost" id="liResend" style="width:100%;margin-top:8px">Reenviar email</button>
+      <button class="btn ghost" id="liBack" style="width:100%;margin-top:8px">Usar otro email</button>
+    </div>`;
+    document.getElementById('liResend').onclick=()=>startVerification(email,allowClose);
+    document.getElementById('liBack').onclick=()=>showLogin(allowClose);
+  } else {
+    ov.innerHTML=`<div class="loginbox">
+      <h2>🔑 Verificá tu email</h2>
+      <p>Ingresá el código de 6 dígitos para <b>${email}</b>:</p>
+      <div class="demonote">⚠ <b>Modo local (demo):</b> este sitio estático no tiene servidor de correo, así que el código se muestra acá abajo en lugar de llegar a tu casilla. Para envío por email real: configurar Firebase (instrucciones en <b>firebase-config.js</b> del repo).</div>
+      <div class="verifycode">${r.code}</div>
+      <input id="liCode" inputmode="numeric" maxlength="6" placeholder="······" style="text-align:center;letter-spacing:.3em;font-size:20px"/>
+      <div class="err" id="liErr"></div>
+      <button class="btn" id="liVerify" style="width:100%">Validar código</button>
+      <button class="btn ghost" id="liBack" style="width:100%;margin-top:8px">Volver</button>
+    </div>`;
+    const ver=()=>{
+      if(Cloud.verifyLocalCode(email,document.getElementById('liCode').value)){finishLogin(email,true)}
+      else document.getElementById('liErr').textContent='Código incorrecto.';
+    };
+    document.getElementById('liVerify').onclick=ver;
+    document.getElementById('liCode').onkeydown=e=>{if(e.key==='Enter')ver()};
+    document.getElementById('liBack').onclick=()=>showLogin(allowClose);
+    setTimeout(()=>document.getElementById('liCode').focus(),50);
+  }
+}
+function finishLogin(email,justVerified){
   let u=profiles.users.find(x=>x.email===email);
   const isNew=!u;
-  if(isNew){u={email,notif:false,lastStudy:null};profiles.users.push(u)}
+  if(isNew){u={email,notif:false,lastStudy:null,verified:!!justVerified};profiles.users.push(u)}
+  else if(justVerified)u.verified=true;
   profiles.current=email;saveProfiles();
   // migrar progreso anónimo previo al primer perfil creado
   if(isNew&&!localStorage.getItem(LSBASE+'::'+email)&&localStorage.getItem(LSBASE)){
@@ -240,7 +323,16 @@ function login(email){
   }
   loadState();
   document.getElementById('loginOverlay').style.display='none';
-  renderUserbox();setMode(mode);checkReminder();
+  renderUserbox();setMode(mode);checkReminder();syncProgress();handleJoinParam();
+}
+function handleJoinParam(){
+  const code=new URLSearchParams(location.search).get('join');
+  if(code&&profiles.current){
+    history.replaceState({},'',location.pathname);
+    Cloud.joinGroup(code,profiles.current)
+      .then(g=>{alert('✔ Te uniste al grupo "'+g.name+'"');setMode('grupos')})
+      .catch(e=>alert(e.message));
+  }
 }
 
 /* ---------- notificaciones push (recordatorios de estudio) ---------- */
@@ -275,6 +367,34 @@ let mode='estudio';
 
 /* ============ MODO ESTUDIO ============ */
 let curModule=DATA.length?DATA[0].id:null,filter='all',lvlFilter='all',subFilter='all',list=[],idx=0,order=[];
+let adaptive=true,hist=[];
+/* selección adaptativa: 1º vencidas (repaso espaciado), 2º nunca vistas, 3º ponderado por debilidad */
+function pickNext(){
+  const cur=order[idx];
+  const pool=list.map((q,i)=>({q,i})).filter(x=>x.i!==cur);
+  if(!pool.length)return cur;
+  const now=Date.now();
+  const due=pool.filter(x=>{const s=state[x.q._gid];return s&&s.due&&s.due<=now});
+  if(due.length){due.sort((a,b)=>state[a.q._gid].due-state[b.q._gid].due);return due[0].i}
+  const unseen=pool.filter(x=>!stt(x.q._gid));
+  if(unseen.length)return unseen[Math.floor(Math.random()*unseen.length)].i;
+  const w=pool.map(x=>{const s=state[x.q._gid]||{};const acc=s.a?(s.c||0)/s.a:0.5;return Math.max(0.15,1.2-acc)});
+  let t=Math.random()*w.reduce((a,b)=>a+b,0);
+  for(let k=0;k<pool.length;k++){t-=w[k];if(t<=0)return pool[k].i}
+  return pool[pool.length-1].i;
+}
+function advance(){
+  if(!list.length)return;
+  if(adaptive&&list.length>1){hist.push(idx);if(hist.length>100)hist.shift();
+    const li=pickNext();const ni=order.indexOf(li);idx=ni>=0?ni:0;}
+  else idx=(idx+1)%list.length;
+  drawCard();
+}
+function goBack(){
+  if(adaptive&&hist.length)idx=hist.pop();
+  else idx=(idx-1+list.length)%list.length;
+  drawCard();
+}
 function activeList(){
   let l=ALL.filter(q=>q.module===curModule);
   if(filter==='review')l=l.filter(q=>stt(q._gid)==='review');
@@ -298,15 +418,17 @@ function renderEstudio(){
       <span class="chip" data-l="intermediate">Intermedio</span>
       <span class="chip" data-l="advanced">Avanzado</span>
       <select id="subsel" title="Subdominio"></select>
+      <span class="chip ${adaptive?'on':''}" id="adaptChip" title="Prioriza repasos vencidos, preguntas nuevas y tus puntos débiles">🧠 Adaptativo</span>
       <button class="btn ghost" id="shuffle">🔀 Mezclar</button>
       <div class="progresswrap"><span id="ptext"></span><span class="pbar"><i id="pbar"></i></span></div>
     </div>
     <div id="cardHost"></div>
     <div class="nav"><button class="btn ghost" id="prev">← Anterior</button><button class="btn" id="next">Siguiente →</button></div>
   </div></main>`;
-  document.getElementById('shuffle').onclick=()=>{buildOrder();order=shuffle(order);idx=0;drawCard()};
-  document.getElementById('prev').onclick=()=>{idx=(idx-1+list.length)%list.length;drawCard()};
-  document.getElementById('next').onclick=()=>{idx=(idx+1)%list.length;drawCard()};
+  document.getElementById('adaptChip').onclick=()=>{adaptive=!adaptive;document.getElementById('adaptChip').classList.toggle('on',adaptive)};
+  document.getElementById('shuffle').onclick=()=>{buildOrder();order=shuffle(order);idx=0;hist=[];drawCard()};
+  document.getElementById('prev').onclick=goBack;
+  document.getElementById('next').onclick=advance;
   app.querySelectorAll('.chip[data-f]').forEach(c=>c.onclick=()=>{filter=c.dataset.f;idx=0;drawCard()});
   app.querySelectorAll('.chip[data-l]').forEach(c=>c.onclick=()=>{lvlFilter=c.dataset.l;idx=0;drawCard()});
   document.getElementById('subsel').onchange=e=>{subFilter=e.target.value;idx=0;drawCard()};
@@ -357,7 +479,10 @@ function drawCard(){
       ${q.src?`<span class="tag srcx" title="Fuente">${SRC_LABELS[q.src]||q.src}</span>`:''}
       ${status==='known'?'<span class="badge-known">✔ dominada</span>':status==='review'?'<span class="badge-review">⚑ repasar</span>':''}
       <span class="qnum">${idx+1} / ${list.length}</span></div>
-    <div class="question">${q.question}</div>${optsHtml}
+    <div class="question">${q.question}</div>
+    ${q.diagram?`<div class="diag">${q.diagram}</div>`:''}
+    ${q.code?`<pre class="codeblock">${esc(q.code)}</pre>`:''}
+    ${optsHtml}
     <button class="btn" id="reveal">Mostrar respuesta</button>
     <div class="answer" id="ans"><h4>Respuesta correcta y explicación</h4>${verdict}
       <div class="body">${mdToHtml(q.answer)}</div>
@@ -368,13 +493,15 @@ function drawCard(){
   const ans=document.getElementById('ans');
   function reveal(){ans.classList.add('show');document.getElementById('reveal').style.display='none';if(!status)setSt(q._gid,'seen')}
   document.getElementById('reveal').onclick=reveal;
-  document.getElementById('known').onclick=()=>{setSt(q._gid,'known');idx=(idx+1)%list.length;drawCard()};
-  document.getElementById('review').onclick=()=>{setSt(q._gid,'review');drawCard()};
+  document.getElementById('known').onclick=()=>{recAnswer(q._gid,true);setSt(q._gid,'known');advance()};
+  document.getElementById('review').onclick=()=>{recAnswer(q._gid,false);setSt(q._gid,'review');drawCard()};
   host.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
     if(el.classList.contains('disabled'))return;
     const i=+el.dataset.i,ci=q.type==='vf'?(q.correct==='V'?0:1):q.correct;
     host.querySelectorAll('.opt').forEach(o=>{o.classList.add('disabled');if(+o.dataset.i===ci)o.classList.add('correct')});
-    if(i!==ci)el.classList.add('wrong');reveal();
+    if(i!==ci)el.classList.add('wrong');
+    recAnswer(q._gid,i===ci);
+    reveal();
   });
 }
 
@@ -451,12 +578,18 @@ function renderExamen(){
   search.style.display='none';clearInterval(exTimer);
   app.innerHTML=`<main><div class="stage"><div class="configbox">
     <h2 style="margin-top:0">📝 Simulacro de examen</h2>
-    <p style="color:var(--muted)">Mezcla V/F + opción múltiple + desarrollo. El examen real es 100% opción múltiple (60 preguntas / 120 min / 720 de 1000), pero acá las de opción/V-F se corrigen solas (¡restan 0,5 si están mal!) y las de desarrollo las autocorregís contra la respuesta modelo — desarrollar la respuesta fija mejor los conceptos.</p>
-    <div class="configrow"><span>Alcance</span>
+    <p style="color:var(--muted)">El formato <b>Certificación</b> replica el examen real: 100% preguntas objetivas, distribución oficial por dominio (Agentic 27% · Tools/MCP 18% · Claude Code 20% · Prompting 20% · Contexto 15%), sin puntos negativos, aprobación al 72% (≈720/1000). La selección prioriza tus preguntas no vistas y tus puntos débiles.</p>
+    <div class="configrow"><span>Formato</span>
+      <select id="exFmt">
+        <option value="cert60">🎓 Certificación — 60 preguntas / 120 min</option>
+        <option value="cert30" selected>🎓 Certificación corta — 30 preguntas / 60 min</option>
+        <option value="custom">Personalizado (V/F + desarrollo, resta 0,5)</option>
+      </select></div>
+    <div class="configrow"><span>Alcance <small style="color:var(--muted)">(solo personalizado)</small></span>
       <select id="exScope"><option value="todo">Todo (5 dominios)</option><option value="d12">Dominios 1–2 (Agentic + Tools/MCP)</option><option value="d345">Dominios 3–5 (Code + Prompting + Contexto)</option></select></div>
     <div class="configrow"><span>Duración</span>
-      <select id="exDur"><option value="30">30 min</option><option value="60">60 min</option><option value="120">120 min (real)</option><option value="0">Sin límite</option></select></div>
-    <div class="configrow"><span>Nº de desarrollo</span>
+      <select id="exDur"><option value="0">Según formato</option><option value="30">30 min</option><option value="60">60 min</option><option value="120">120 min (real)</option><option value="-1">Sin límite</option></select></div>
+    <div class="configrow"><span>Nº de desarrollo <small style="color:var(--muted)">(solo personalizado)</small></span>
       <select id="exOpen"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></div>
     <button class="btn" id="exStart" style="width:100%;margin-top:10px">Comenzar examen</button>
     <details style="margin-top:16px;color:var(--muted);font-size:13px"><summary style="cursor:pointer">🎯 Tips para el examen real</summary>
@@ -500,18 +633,49 @@ function buildExam(scope,nOpen){
   opens.forEach(a=>q.push({...a}));
   return shuffle(q);
 }
+/* examen formato certificación: cuotas por dominio según el blueprint oficial */
+const DOMW=[['agentic',.27],['mcp',.18],['code',.20],['prompt',.20],['context',.15]];
+const DOMNAMES={agentic:'Agentic Architecture (27%)',mcp:'Tools & MCP (18%)',code:'Claude Code (20%)',prompt:'Prompt Engineering (20%)',context:'Context & Reliability (15%)'};
+const DOMCATS={agentic:['Agentic Architecture'],mcp:['Tools & MCP'],code:['Claude Code'],prompt:['Prompt Engineering'],context:['Context & Reliability']};
+function prioQ(q){const s=state[q._gid];if(!s||!s.status)return 0;const acc=s.a?(s.c||0)/s.a:1;return acc<0.7?1:2}
+function buildCertExam(n){
+  const quotas=DOMW.map(([d,w])=>[d,Math.round(w*n)]);
+  quotas[0][1]+=n-quotas.reduce((a,x)=>a+x[1],0);   // ajuste de redondeo al dominio de mayor peso
+  const qs=[];
+  quotas.forEach(([d,k])=>{
+    let pool=shuffle(ALL.filter(a=>a.module===d&&a.type!=='open'));
+    pool.sort((a,b)=>prioQ(a)-prioQ(b));            // no vistas primero, después débiles
+    const take=pool.slice(0,k).map(x=>({...x}));
+    const pairs=MATCH.filter(c=>DOMCATS[d].includes(c.cat)).flatMap(c=>c.pairs.map(p=>({...p,cat:c.cat})));
+    while(take.length<k&&pairs.length){
+      const p=shuffle(pairs)[0];
+      const opts=shuffle([p.t,...pickTerms(p.cat,p.t,3)]);
+      take.push({type:'mc',module:d,src:'generated',lvl:'basic',question:`Which concept matches this definition?\n\n"${p.d}"`,options:opts,correct:opts.indexOf(p.t)});
+    }
+    qs.push(...take);
+  });
+  return shuffle(qs);
+}
 function startExam(){
-  const scope=document.getElementById('exScope').value;
-  const dur=+document.getElementById('exDur').value;
-  const nOpen=+document.getElementById('exOpen').value;
-  exam={q:buildExam(scope,nOpen),ans:{},scope};
-  exLeft=dur*60;
+  const fmt=document.getElementById('exFmt').value;
+  const durSel=+document.getElementById('exDur').value;
+  if(fmt==='cert60'||fmt==='cert30'){
+    const n=fmt==='cert60'?60:30;
+    exam={q:buildCertExam(n),ans:{},cert:true};
+    exLeft=(durSel>0?durSel:(durSel===-1?0:(n===60?120:60)))*60;
+  } else {
+    const scope=document.getElementById('exScope').value;
+    const nOpen=+document.getElementById('exOpen').value;
+    exam={q:buildExam(scope,nOpen),ans:{},scope};
+    exLeft=(durSel>0?durSel:(durSel===-1?0:60))*60;
+  }
   renderExamForm();
   clearInterval(exTimer);
-  if(dur>0){exTimer=setInterval(()=>{exLeft--;const t=document.getElementById('exTimer');
-    if(t){t.textContent=fmt(exLeft);if(exLeft<300)t.classList.add('warn')}
+  if(exLeft>0){exTimer=setInterval(()=>{exLeft--;const t=document.getElementById('exTimer');
+    if(t){t.textContent=fmt2(exLeft);if(exLeft<300)t.classList.add('warn')}
     if(exLeft<=0){clearInterval(exTimer);gradeExam()}},1000);}
 }
+function fmt2(s){return fmt(s)}
 function renderExamForm(){
   let html=`<main><div class="stage">
     <div class="toolbar" style="position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5">
@@ -521,7 +685,9 @@ function renderExamForm(){
     </div>`;
   exam.q.forEach((q,i)=>{
     html+=`<div class="exq" id="exq${i}"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span>${q.sub?`<span class="tag mod">${q.sub}</span>`:''}${q.lvl&&q.lvl!=='basic'?`<span class="tag ${q.lvl}">${LVL_LABELS[q.lvl]}</span>`:''}<span class="qnum">Pregunta ${i+1}</span></div>
-      <div class="question">${q.question}</div>`;
+      <div class="question">${q.question}</div>
+      ${q.diagram?`<div class="diag">${q.diagram}</div>`:''}
+      ${q.code?`<pre class="codeblock">${esc(q.code)}</pre>`:''}`;
     if(q.type==='mc')html+='<div>'+q.options.map((o,j)=>`<div class="radio" data-q="${i}" data-v="${j}"><b>${String.fromCharCode(65+j)}</b> ${o}</div>`).join('')+'</div>';
     else if(q.type==='vf')html+='<div>'+['Verdadero','Falso'].map((o,j)=>`<div class="radio" data-q="${i}" data-v="${j===0?'V':'F'}">${o}</div>`).join('')+'</div>';
     else html+=`<textarea data-q="${i}" placeholder="Desarrollá tu respuesta acá…"></textarea>`;
@@ -544,7 +710,8 @@ function gradeExam(){
       const correct=q.type==='vf'?q.correct:String(q.correct);
       const given=q.type==='vf'?a:String(a===undefined?'':a);
       if(a===undefined){/*sin responder: 0*/}
-      else if(given===correct)auto+=1;else auto-=0.5;
+      else if(given===correct)auto+=1;
+      else if(!exam.cert)auto-=0.5;   // formato certificación: sin puntos negativos
     } else {openMax++;openList.push(i)}
   });
   exam._auto=auto;exam._autoMax=autoMax;exam._openMax=openMax;exam._openList=openList;exam._openScore={};
@@ -555,7 +722,9 @@ function renderExamResult(){
   exam.q.forEach((q,i)=>{
     const a=exam.ans[i];
     html+=`<div class="exq"><div class="lbl"><span class="tag ${q.type}">${q.type==='vf'?'V/F':q.type==='mc'?'Opción múltiple':'Desarrollo'}</span>${q.sub?`<span class="tag mod">${q.sub}</span>`:''}${q.lvl&&q.lvl!=='basic'?`<span class="tag ${q.lvl}">${LVL_LABELS[q.lvl]}</span>`:''}<span class="qnum">Pregunta ${i+1}</span></div>
-      <div class="question">${q.question}</div>`;
+      <div class="question">${q.question}</div>
+      ${q.diagram?`<div class="diag">${q.diagram}</div>`:''}
+      ${q.code?`<pre class="codeblock">${esc(q.code)}</pre>`:''}`;
     if(q.type==='mc'){
       html+='<div>'+q.options.map((o,j)=>{let cls='radio';if(j===q.correct)cls+=' rcorrect';if(String(a)===String(j)&&j!==q.correct)cls+=' rwrong';
         return `<div class="${cls}"><b>${String.fromCharCode(65+j)}</b> ${o}</div>`}).join('')+'</div>';
@@ -584,7 +753,7 @@ function renderExamResult(){
   updResult();
   document.getElementById('resHead').scrollIntoView();
 }
-function resLine(ok,blank){return `<div style="margin-top:8px;font-weight:700;color:${blank?'var(--muted)':ok?'var(--ok)':'var(--bad)'}">${blank?'— Sin responder (0)':ok?'✔ Correcta (+1)':'✘ Incorrecta (−0,5)'}</div>`}
+function resLine(ok,blank){return `<div style="margin-top:8px;font-weight:700;color:${blank?'var(--muted)':ok?'var(--ok)':'var(--bad)'}">${blank?'— Sin responder (0)':ok?'✔ Correcta (+1)':(exam.cert?'✘ Incorrecta (0)':'✘ Incorrecta (−0,5)')}</div>`}
 function updResult(){
   const openScore=Object.values(exam._openScore).reduce((a,b)=>a+b,0);
   const graded=Object.keys(exam._openScore).length;
@@ -592,11 +761,28 @@ function updResult(){
   const max=exam._autoMax+exam._openMax;
   const pct=max?Math.round(total/max*100):0;
   const pass=pct>=72;
+  const scaled=Math.round(100+900*(max?total/max:0));
+  let domHtml='';
+  if(exam.cert){
+    domHtml='<div style="margin-top:16px;text-align:left;max-width:520px;margin-left:auto;margin-right:auto">'+
+      DOMW.map(([d])=>{
+        const qs=exam.q.map((q,i)=>({q,i})).filter(x=>x.q.module===d);
+        if(!qs.length)return '';
+        const ok=qs.filter(x=>{const a=exam.ans[x.i];if(a===undefined)return false;
+          const corr=x.q.type==='vf'?x.q.correct:String(x.q.correct);return String(a)===corr}).length;
+        const p=Math.round(ok/qs.length*100);
+        return `<div class="dombar"><span class="nm">${DOMNAMES[d]}</span>
+          <span class="pbar" style="flex:1"><i style="width:${p}%"></i></span>
+          <b style="min-width:64px;text-align:right">${ok}/${qs.length}</b></div>`;
+      }).join('')+'</div>';
+  }
   document.getElementById('resHead').innerHTML=`<div class="card result">
     <div class="score ${pass?'pass':'fail'}">${pct}%</div>
+    ${exam.cert?`<div style="font-size:16px;color:var(--muted)">puntaje escalado aprox.: <b style="color:var(--txt)">${scaled} / 1000</b> (corte: 720)</div>`:''}
     <div style="font-size:18px;margin:6px 0">${total.toFixed(1)} / ${max} puntos</div>
-    <div style="color:var(--muted)">Objetivas: ${Math.max(0,exam._auto).toFixed(1)}/${exam._autoMax} · Desarrollo: ${openScore.toFixed(1)}/${exam._openMax} (${graded}/${exam._openMax} corregidas)</div>
-    <div style="margin-top:10px;font-weight:700;color:${pass?'var(--ok)':'var(--bad)'}">${pass?'✔ Aprobado (≥72%, como el 720/1000 real)':'✘ Debajo del 72% (720/1000) — seguí repasando'}</div>
+    ${exam._openMax?`<div style="color:var(--muted)">Objetivas: ${Math.max(0,exam._auto).toFixed(1)}/${exam._autoMax} · Desarrollo: ${openScore.toFixed(1)}/${exam._openMax} (${graded}/${exam._openMax} corregidas)</div>`:''}
+    <div style="margin-top:10px;font-weight:700;color:${pass?'var(--ok)':'var(--bad)'}">${pass?'✔ Aprobado (≥72% ≈ 720/1000)':'✘ Debajo del corte (720/1000) — seguí repasando'}</div>
+    ${domHtml}
     <button class="btn ghost" style="margin-top:16px" onclick="renderExamen()">Nuevo examen</button>
   </div>`;
 }
@@ -607,7 +793,76 @@ function setMode(m){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.mode===m));
   if(m==='estudio')renderEstudio();
   else if(m==='memoria')renderMemoria();
+  else if(m==='grupos')renderGrupos();
   else renderExamen();
+}
+
+/* ============ MODO GRUPOS ============ */
+async function renderGrupos(){
+  search.style.display='none';clearInterval(exTimer);
+  const me=profiles.current;
+  if(!me){showLogin(false);return}
+  app.innerHTML=`<main><div class="stage">
+    <h2 style="margin-top:4px">👥 Grupos de estudio ${Cloud.enabled?'<span class="tag srcx">☁ cloud</span>':'<span class="tag vf">modo local</span>'}</h2>
+    ${Cloud.enabled?'':`<p style="color:var(--muted);font-size:13px">Sin backend configurado, los grupos y el progreso comparado viven en <b>este navegador</b> (sirve para una compu compartida). Para grupos reales entre dispositivos con emails de invitación: instrucciones en <b>firebase-config.js</b> del repo (5 min, gratis).</p>`}
+    <div class="toolbar" style="gap:10px">
+      <input class="search" id="gName" placeholder="Nombre del grupo nuevo"/>
+      <button class="btn" id="gCreate">➕ Crear grupo</button>
+      <span style="color:var(--border)">|</span>
+      <input class="search" id="gCode" placeholder="Código (ej: AB3K9X)" style="min-width:150px;text-transform:uppercase"/>
+      <button class="btn ghost" id="gJoin">Unirme con código</button>
+    </div>
+    <div id="gList" style="display:flex;flex-direction:column;gap:14px"><div class="empty">Cargando…</div></div>
+  </div></main>`;
+  document.getElementById('gCreate').onclick=async()=>{
+    const n=document.getElementById('gName').value.trim();
+    if(!n){alert('Poné un nombre para el grupo.');return}
+    const g=await Cloud.createGroup(n,me);
+    document.getElementById('gName').value='';
+    renderGroupList();
+    setTimeout(()=>alert(`Grupo "${g.name}" creado.\nCódigo de invitación: ${g.code}\n\nCompartí el código o el link de invitación (botón 🔗) con tus compañeros.`),100);
+  };
+  document.getElementById('gJoin').onclick=async()=>{
+    const c=document.getElementById('gCode').value.trim();
+    if(!c)return;
+    try{const g=await Cloud.joinGroup(c,me);alert('✔ Te uniste a "'+g.name+'"')}catch(e){alert(e.message)}
+    renderGroupList();
+  };
+  renderGroupList();
+}
+async function renderGroupList(){
+  const me=profiles.current;const host=document.getElementById('gList');if(!host)return;
+  let gs=[];try{gs=await Cloud.myGroups(me)}catch(e){}
+  if(!gs.length){host.innerHTML='<div class="empty">Todavía no estás en ningún grupo.<br>Creá uno (2+ estudiantes) y compartí el código, o uníte con el código que te pasaron.</div>';return}
+  const members=[...new Set(gs.flatMap(g=>g.members))];
+  let prog={};try{prog=await Cloud.getProgress(members)}catch(e){}
+  host.innerHTML=gs.map(g=>{
+    const rows=[...g.members].sort((a,b)=>((prog[b]||{}).known||0)-((prog[a]||{}).known||0)).map((m,ri)=>{
+      const p=prog[m]||{};const tot=p.total||ALL.length;
+      const pct=tot?Math.round((p.known||0)/tot*100):0;
+      const acc=p.answered?Math.round((p.correct||0)/p.answered*100):null;
+      return `<div style="display:flex;align-items:center;gap:10px;margin:7px 0">
+        <span style="min-width:24px;color:var(--muted)">${ri===0?'🥇':ri===1?'🥈':ri===2?'🥉':(ri+1)+'.'}</span>
+        <span style="min-width:200px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m}${m===me?' <b style="color:var(--accent2)">(vos)</b>':''}</span>
+        <span class="pbar" style="flex:1"><i style="width:${pct}%"></i></span>
+        <span style="color:var(--muted);font-size:12.5px;min-width:170px;text-align:right">${p.known||0}/${tot} dominadas${acc!==null?' · '+acc+'% aciertos':''}</span></div>`;
+    }).join('');
+    const invite=location.origin+location.pathname+'?join='+g.code;
+    return `<div class="card"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h3 style="margin:0">${g.name}</h3>
+      <span class="tag mod">código: ${g.code}</span>
+      <span class="tag srcx">${g.members.length} integrante${g.members.length>1?'s':''}</span>
+      <span class="spacer"></span>
+      <button class="btn ghost" data-inv="${invite}">🔗 Copiar invitación</button>
+      <button class="btn ghost" data-leave="${g.code}">Salir</button></div>
+      <div style="margin-top:12px">${rows}</div></div>`;
+  }).join('');
+  host.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>{
+    navigator.clipboard.writeText(b.dataset.inv).then(()=>alert('Link de invitación copiado:\n'+b.dataset.inv));
+  });
+  host.querySelectorAll('[data-leave]').forEach(b=>b.onclick=async()=>{
+    if(confirm('¿Salir del grupo?')){await Cloud.leaveGroup(b.dataset.leave,me);renderGroupList()}
+  });
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
 search.oninput=()=>{if(mode==='estudio'){idx=0;drawCard()}};
@@ -618,9 +873,16 @@ document.addEventListener('keydown',e=>{
     if(e.key===' '){const r=document.getElementById('reveal');if(r&&r.style.display!=='none'){e.preventDefault();r.click()}}}
 });
 window.renderExamen=renderExamen;
+Cloud.init();
 renderUserbox();
 setMode('estudio');
-if(!profiles.current)showLogin(false);else checkReminder();
+(async()=>{
+  let em=null;
+  try{em=await Cloud.completeEmailLink()}catch(e){console.warn(e)}
+  if(em){finishLogin(em,true);return}
+  if(!profiles.current)showLogin(false);
+  else{checkReminder();handleJoinParam();syncProgress()}
+})();
 </script>
 </body>
 </html>
