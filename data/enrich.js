@@ -73,22 +73,22 @@ agentic:{
 }
 if (response.stop_reason === "end_turn") break;    // done
 if (response.stop_reason === "max_tokens") retryWithMoreBudget();`},
-  8:{code:`// Agent SDK — the coordinator can only spawn subagents
-// if "Task" is among its allowed tools
+  8:{code:`// Agent SDK — a coordinator can only spawn subagents if the
+// subagent-launching tool ("Agent") is among its allowed tools
 const result = query({
   prompt: "Research these 4 subtopics and synthesize",
   options: {
-    allowedTools: ["Task", "Read", "WebSearch"],  // ← "Task" required
+    allowedTools: ["Agent", "Read", "WebSearch"],  // ← required to delegate
     maxTurns: 30
   }
 });`},
-  10:{code:`// PARALLEL: one assistant turn, multiple Task calls
+  10:{code:`// PARALLEL: one assistant turn, multiple subagent calls
 { "role": "assistant", "content": [
-    {"type": "tool_use", "name": "Task", "input": {"prompt": "Research subtopic A"}},
-    {"type": "tool_use", "name": "Task", "input": {"prompt": "Research subtopic B"}},
-    {"type": "tool_use", "name": "Task", "input": {"prompt": "Research subtopic C"}}
+    {"type": "tool_use", "name": "Agent", "input": {"prompt": "Research subtopic A"}},
+    {"type": "tool_use", "name": "Agent", "input": {"prompt": "Research subtopic B"}},
+    {"type": "tool_use", "name": "Agent", "input": {"prompt": "Research subtopic C"}}
 ]}
-// SEQUENTIAL (slow): call Task → await → call Task → await → ...`},
+// SEQUENTIAL (slow): call → await result → call → await result → ...`},
   19:{code:`// Hook config — deterministic, the model cannot skip it
 { "hooks": { "PreToolUse": [{
     "matcher": "delete_record",
@@ -174,12 +174,18 @@ prompt:{
       "required": ["invoice_number", "total"]
     }}],
   "tool_choice": {"type": "tool", "name": "record_extraction"} }`},
-  16:{code:`// Prefill: start the assistant's turn yourself
+  16:{code:`// ❌ LEGACY — assistant prefill. Current models reject this:
+// 400 invalid_request_error: "This model does not support assistant
+// message prefill. The conversation must end with a user message."
 "messages": [
   {"role": "user", "content": "Extract the invoice as JSON."},
-  {"role": "assistant", "content": "{"}     // ← model continues from here
+  {"role": "assistant", "content": "{"}
 ]
-// output continues: "invoice_number": "F-2041", ...  (no preamble possible)`},
+
+// ✅ CURRENT — declare the output format instead of forcing the opening:
+{ "messages": [{"role": "user", "content": "Extract the invoice as JSON."}],
+  "output_config": {"format": {"type": "json_schema", "schema": {...}}} }
+// Other replacements: strict tool use, or system-prompt format instructions.`},
   13:{code:`// Each batch request carries YOUR correlation id
 POST /v1/messages/batches
 { "requests": [
