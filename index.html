@@ -200,7 +200,7 @@ const SUBS={
  '4.5':'Batch processing','4.6':'Multi-pass workflows',
  '5.1':'Context window & caching','5.2':'Long conversations & memory','5.3':'Errors & resilience',
  '5.4':'Retrieval at scale','5.5':'Provenance & auditability','5.6':'Evaluation & oversight'};
-const SRC_LABELS={core:'core bank',repos:'community repos',ptest:'practical test',video1:'YT · 50Q',video2:'YT · traps',generated:'auto'};
+const SRC_LABELS={core:'core bank',repos:'community repos',ptest:'practical test',video1:'YT · 50Q',video2:'YT · traps',pdf:'PDF · ExamAuthor',generated:'auto'};
 const LVL_LABELS={basic:'Básico',intermediate:'Intermedio',advanced:'Avanzado'};
 
 /* ---------- sesiones / perfiles ---------- */
@@ -643,7 +643,8 @@ function buildCertExam(n){
   quotas[0][1]+=n-quotas.reduce((a,x)=>a+x[1],0);   // ajuste de redondeo al dominio de mayor peso
   const qs=[];
   quotas.forEach(([d,k])=>{
-    let pool=shuffle(ALL.filter(a=>a.module===d&&a.type!=='open'));
+    const dnum={agentic:'1',mcp:'2',code:'3',prompt:'4',context:'5'}[d];
+    let pool=shuffle(ALL.filter(a=>a.type!=='open'&&(a.module===d||(a.module==='pdf'&&(a.sub||'').startsWith(dnum+'.')))));
     pool.sort((a,b)=>prioQ(a)-prioQ(b));            // no vistas primero, después débiles
     const take=pool.slice(0,k).map(x=>({...x}));
     const pairs=MATCH.filter(c=>DOMCATS[d].includes(c.cat)).flatMap(c=>c.pairs.map(p=>({...p,cat:c.cat})));

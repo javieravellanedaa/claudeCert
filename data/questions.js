@@ -916,7 +916,7 @@ This distinction is a favorite exam trap: "better descriptions" sounds always-ri
 Workflow for a huge unfamiliar repo: Glob to narrow by structure, Grep to find by content, and only then Read the handful of relevant files — reading broadly first exhausts the context window.` },
 ]},
 
-/* ============ DOMAIN 3: CLAUDE CODE (20%) ============ */,
+/* ============ DOMAIN 3: CLAUDE CODE (20%) ============ */
 
 { id:"code", name:"💻 Claude Code (20%)", questions:[
   { type:"mc", sub:"3.1", lvl:"basic", src:"core",
@@ -1575,7 +1575,7 @@ The exam loves this trade-off: latency vs cost.` },
 - All-or-nothing (A) throws away the working 8%-FP security signal.` },
 ]},
 
-/* ============ DOMAIN 5: CONTEXT & RELIABILITY (15%) ============ */,
+/* ============ DOMAIN 5: CONTEXT & RELIABILITY (15%) ============ */
 
 { id:"context", name:"📚 Context & Reliability (15%)", questions:[
   { type:"mc", sub:"5.1", lvl:"basic", src:"core",
@@ -1910,4 +1910,399 @@ Curation beats capacity: targeted retrieval + good prompt ordering usually outpe
 - Replace with **observable triggers**: explicit human request, defined policy gap or violation, repeated failure to progress (N attempts), high-stakes action classes.
 - Averaging confidences (D) compounds the mistake — the signal itself is invalid, not insufficiently sampled.` },
 ]},
+
+/* ============ PDF BANK (ExamAuthor free sample, 30 Qs, rewritten originally) ============ */
+{ id:"pdf", name:"📄 Banco PDF (30)", questions:[
+{ type:"mc", sub:"1.3", lvl:"basic", src:"pdf",
+  question:`A coordinator orchestrates a research pipeline in which a web search subagent and a document analysis subagent both finish their work. The coordinator then calls a synthesis subagent, but that agent replies that it cannot proceed because it received no research material. What is the most probable root cause?`,
+  options:[
+    `The synthesis agent lacks tools that would let it pull results directly out of the other agents' conversation histories.`,
+    `The synthesis agent's context window is too small to fit the combined output of the two earlier agents.`,
+    `The subagents were not configured to share a single API connection, which is required for automatic context sharing across invocations.`,
+    `The coordinator never placed the earlier agents' results into the prompt it sent to the synthesis agent.`],
+  correct:3,
+  answer:`Subagents start with isolated context and can only work with what appears in their prompt — if the coordinator forgets to inject the prior findings, the synthesis agent legitimately sees nothing. The other options miss the failure mode:
+- **A**: agents never fetch each other's transcripts; orchestration passes outputs explicitly.
+- **B**: an overflowing context window would produce truncated data, not a total absence of findings.
+- **C**: no such shared-connection mechanism exists; context flows only through explicit prompt passing.` },
+
+{ type:"mc", sub:"1.2", lvl:"intermediate", src:"pdf",
+  question:`While researching renewable energy adoption, the web search subagent reports a recent figure (35% adoption in 2024) and the document analysis subagent extracts an older figure from internal reports (18% in 2022). The synthesis agent treats the two numbers as conflicting sources instead of recognizing an upward trend. Which change would best let the synthesis agent interpret such time-based differences correctly?`,
+  options:[
+    `Make every subagent embed publication or data-collection dates in its structured output.`,
+    `Tell the synthesis agent to treat whichever figure is newest as authoritative and relegate older numbers to a separate historical appendix.`,
+    `Insert a conflict-resolution agent that silently drops the older value whenever a newer value exists for the same metric.`,
+    `Restrict the web search agent so it only surfaces results published within the last six months.`],
+  correct:0,
+  answer:`Attaching timestamps to each finding gives the synthesis agent the metadata it needs to see that the figures describe different points in time — a growth trend, not a contradiction. The alternatives fail:
+- **B** buries older context in an appendix rather than helping the model relate data points across time.
+- **C** destroys historical data, making trend analysis impossible.
+- **D** shrinks available context and never addresses how temporal differences should be interpreted.` },
+
+{ type:"mc", sub:"1.1", lvl:"advanced", src:"pdf",
+  question:`Final research reports are sometimes shallow on particular subtopics. The document analysis agent regularly surfaces gap observations — for example, "sources cover API authentication but say nothing about token refresh patterns" — but the pipeline is strictly linear, so by the time analysis runs, the search phase is already over and the insight goes unused. Which architectural change fixes this most effectively?`,
+  options:[
+    `Let the analysis agent itself report gaps to the coordinator and directly drive repeated targeted searches and re-analysis until coverage is sufficient.`,
+    `Insert a research-planning agent ahead of the search phase that breaks the topic into fine-grained sub-questions.`,
+    `Have the synthesis agent attach per-section confidence scores and mark thin areas for human review.`,
+    `Have the coordinator inspect analysis output for gap signals and, when found, re-run the search phase with gap-informed queries before continuing.`],
+  correct:3,
+  answer:`Keeping the loop under the coordinator's control — detect gap indicators in the analysis output, issue targeted follow-up searches, re-analyze — turns the pipeline into an iterative cycle while orchestration stays centralized. The others fall short:
+- **A** lets a worker agent steer workflow decisions, tightly coupling analysis with orchestration logic.
+- **B** improves upfront coverage but cannot handle gaps that only emerge during analysis.
+- **C** merely labels the problem for humans; nothing is automatically remedied.` },
+
+{ type:"mc", sub:"1.7", lvl:"advanced", src:"pdf",
+  question:`A multi-agent research pipeline crashed after 12 of 28 documents were processed: the search agent had located sources, the analyzer was partway through, and the synthesizer had begun identifying patterns. You must resume without redoing completed work and without degrading the accuracy of what was already found. Which state-management design best balances information fidelity with context efficiency on restart?`,
+  options:[
+    `Every agent persists its progress as a structured export at an agreed path; when the run resumes, the coordinator consults a manifest and injects only the relevant state into each agent's prompt.`,
+    `Persist the coordinator's full conversation log — every delegation and reply — and hand that log to agents when the run restarts.`,
+    `Give each agent its own persistent state file that it reloads independently whenever a session begins.`,
+    `Index every agent output into a shared vector store, and have each resuming agent run semantic searches to recover its prior findings.`],
+  correct:0,
+  answer:`Structured per-agent exports plus a coordinator-managed manifest preserve complete, machine-readable state (**fidelity**) while letting the coordinator inject only what each agent actually needs (**context efficiency**). The alternatives break one side of the trade-off:
+- **B**: raw conversation logs are verbose and unstructured, bloating prompts without guaranteeing clarity.
+- **C**: independent per-agent reloads decentralize control and invite inconsistent, misaligned state.
+- **D**: semantic retrieval is probabilistic and can miss or distort exact structured state during recovery.` },
+
+{ type:"mc", sub:"1.1", lvl:"intermediate", src:"pdf",
+  question:`After its first pass, the synthesis agent flags three research questions it could not answer because the search and analysis agents surfaced nothing on those subtopics. The coordinator currently moves straight to report generation anyway, yielding reports with coverage holes. Which change most effectively improves completeness?`,
+  options:[
+    `Have the coordinator inspect the synthesis output for gaps and, before rerunning synthesis, dispatch new targeted tasks to the search and analysis agents for the missing subtopics.`,
+    `Widen the initial query set sent to search and analysis so relevant material is less likely to be missed in the first place.`,
+    `Have the report generator annotate which research questions went unanswered so readers understand the report's limits.`,
+    `Grant the synthesis agent its own web search tools so it can fill gaps itself without handing control back to the coordinator.`],
+  correct:0,
+  answer:`Closing the loop at the coordinator — evaluate the synthesis output, re-delegate targeted searches for the flagged gaps, then synthesize again — actively resolves incompleteness while keeping orchestration in one place. The rest do not:
+- **B**: broader initial queries are inefficient and still cannot anticipate gaps that only surface later.
+- **C**: disclosing limitations improves transparency but leaves the coverage problem unsolved.
+- **D**: letting the synthesis agent self-serve searches breaks separation of concerns and erodes coordinator control.` },
+
+{ type:"mc", sub:"1.6", lvl:"intermediate", src:"pdf",
+  question:`The document analysis subagent processes cited precedents one at a time when examining complex legal cases; a landmark case with 12 precedents takes over three minutes. What is the best way to cut this latency while keeping the system easy for the coordinator to monitor and debug?`,
+  options:[
+    `Allow the analysis subagent to dynamically spawn its own specialized child agents whenever a case has many citations.`,
+    `Introduce a message queue so precedent-analysis jobs are consumed asynchronously by a pool of worker agents.`,
+    `Build a recursive hierarchy in which analysis agents keep splitting work among children down to one precedent per agent.`,
+    `Have the coordinator launch several parallel analysis subagents, each covering a slice of the precedents, and merge their results before synthesis.`],
+  correct:3,
+  answer:`Coordinator-managed fan-out gives parallel processing (lower latency) while every subagent remains visible to and controlled by the coordinator, preserving observability. The others sacrifice that:
+- **A**: agents spawning their own children decentralizes orchestration and hides work from the coordinator.
+- **B**: queue infrastructure adds operational complexity and obscures execution from the coordinator's viewpoint.
+- **C**: recursive hierarchies make execution paths very hard to trace and debug.` },
+
+{ type:"mc", sub:"1.3", lvl:"intermediate", src:"pdf",
+  question:`Monitoring shows the research phase is slow because the coordinator calls the web search subagent, waits for it to finish, and only then calls the document analysis subagent — even though neither task depends on the other's output. How do you make these two subagents actually run concurrently?`,
+  options:[
+    `Move both subagents to a smaller, faster Haiku-tier model to shorten each one's individual runtime.`,
+    `Build an external async orchestration layer that runs parallel threads, each with its own coordinator-subagent pair, then merges the results.`,
+    `Expand the coordinator's system prompt with an explanation of parallelism benefits and a request to invoke both subagents simultaneously.`,
+    `Have the coordinator emit both Task tool invocations (search and analysis) within one response message instead of across separate turns.`],
+  correct:3,
+  answer:`Parallelism in the agent loop comes from tool-call structure: when both Task calls appear in a single assistant response, the runtime can execute them concurrently rather than serially across turns. The alternatives miss this mechanism:
+- **A** speeds each task up but the execution remains sequential.
+- **B** duplicates coordinators and adds architecture instead of fixing concurrency in the existing flow.
+- **C**: prompt exhortations alone do not reliably change execution behavior — the structure of the tool calls does.` },
+
+{ type:"mc", sub:"5.5", lvl:"advanced", src:"pdf",
+  question:`Production reviews show inconsistent uncertainty handling: sometimes conflicting subagent findings get collapsed into a single confident claim, other times reports hedge so heavily they become useless. When one source says analysts estimate a $50B market and another cites a peer-reviewed study with a much lower figure and a 95% confidence interval, the coordinator either picks one arbitrarily or emits a vague range. Which systematic approach best fixes this?`,
+  options:[
+    `Have subagents suppress any finding that falls below a high confidence threshold so uncertain material never reaches the coordinator.`,
+    `Insert a verification subagent that only forwards claims corroborated by at least two independent sources into synthesis.`,
+    `Direct the synthesis agent to organize reports into explicit sections separating well-supported findings from contested ones, keeping each source's original characterization and methodology intact.`,
+    `Build a calibration layer that converts every uncertainty expression into a normalized 0.0-1.0 probability and computes a reliability-weighted average as the synthesized answer.`],
+  correct:2,
+  answer:`Structuring the report to explicitly distinguish consensus from disagreement — while preserving how each source characterized its own estimate and methodology — makes uncertainty visible and consistent instead of hidden or exaggerated. The rest mishandle it:
+- **A** filters out valuable-but-uncertain insight and biases results by concealing ambiguity.
+- **B** still discards uncertainty (and novel single-source findings) rather than representing it.
+- **D** manufactures false numeric precision from qualitative uncertainty, which can mislead readers.` },
+
+{ type:"mc", sub:"1.2", lvl:"intermediate", src:"pdf",
+  question:`In production, trivial factual lookups (e.g., "When was the Paris Climate Agreement signed?") flow through all four subagents in sequence, taking 40+ seconds — acceptable for deep comparative research, wasteful for simple questions. The query mix is diverse and keeps shifting as users find new uses. What is the most effective way to handle this varying complexity?`,
+  options:[
+    `Build rule-based routing that sorts incoming queries by their shape — simple fact lookup, comparison, or deep analysis — assigning each category a fixed subagent combination.`,
+    `Train a complexity classifier on labeled historical queries to predict the best subagent combination, retraining it periodically as patterns drift.`,
+    `Let the coordinator itself examine each query and dynamically choose which subagents to invoke based on what the request actually requires.`,
+    `Add a fast path that skips subagents entirely for factual questions while forcing every other query through the full pipeline.`],
+  correct:2,
+  answer:`Delegating routing judgment to the coordinator gives flexible, per-query decisions with no rule maintenance or ML infrastructure — exactly right for a diverse, evolving workload. The alternatives are weaker:
+- **A**: static pattern rules are brittle and develop coverage gaps as query types evolve.
+- **B**: a trained classifier needs labeled data and retraining, and lags behind new or rare query types.
+- **D**: a binary fast-path is crude and misroutes queries that look simple but need deeper analysis.` },
+
+{ type:"mc", sub:"1.2", lvl:"intermediate", src:"pdf",
+  question:`A research system grows beyond a single web search agent: a financial API agent returns structured JSON metrics, a news monitoring agent returns prose summaries, and a patent agent returns structured technology lists. The synthesis agent builds executive briefings but currently flattens everything into bullet points, so financial comparisons lose their tabular clarity and news loses narrative flow. What change most improves briefing quality?`,
+  options:[
+    `Teach the synthesis agent to render each content type in its natural form — tables for financial data, prose for news, structured lists for technical items.`,
+    `Insert a conversion layer that transforms all subagent outputs into one intermediate format such as Markdown before synthesis, to allow more flexible rendering.`,
+    `Force every subagent to emit JSON with fields covering all data types so the pipeline is programmatically uniform.`,
+    `Force every subagent to emit uniform prose summaries so the briefing keeps a single consistent executive voice.`],
+  correct:0,
+  answer:`Matching the presentation to each content type preserves what makes each source valuable — tabular comparability, narrative readability, list structure — which is precisely what the flattened briefings lost. The others do not achieve this:
+- **B**: a common intermediate format aids consistency but still tends toward generic rendering rather than type-appropriate presentation.
+- **C**: universal JSON adds structure but pushes complexity into synthesis without improving the human-readable result.
+- **D**: uniform prose throws away tables and lists, hurting exactly the data-heavy content that needs structure.` },
+
+{ type:"mc", sub:"1.3", lvl:"intermediate", src:"pdf",
+  question:`A coordinator has AgentDefinitions properly configured for four specialized subagents — good descriptions, prompts, and tool restrictions. In tests, the coordinator reasons correctly about delegation ("I'll ask the web search agent to find sources"), yet no subagent ever actually runs; the coordinator then carries on as if the delegation had happened, relying on partial knowledge, and the logs contain no errors. What most likely explains this?`,
+  options:[
+    `Context isolation for subagents prevents the coordinator's task descriptions from reaching subagents automatically; explicit context forwarding must be enabled in the agent options.`,
+    `The coordinator's max_tokens value is too small, truncating the Task tool call before the subagent type can be written.`,
+    `The coordinator's allowed-tools configuration omits the Task tool, so it can talk about delegating but has no mechanism to actually spawn subagents.`,
+    `The AgentDefinitions are fine, but the coordinator's system prompt never lists the available subagent types, so the model does not know they can be invoked.`],
+  correct:2,
+  answer:`If Task is missing from the coordinator's allowed tools, the model can plan and narrate delegation but has no way to execute it — producing exactly this silent pattern: no tool calls, no errors, no subagent runs. The others do not match the symptoms:
+- **A**: context isolation would affect what subagents receive, but here no invocation occurs at all.
+- **B**: token truncation yields malformed output or errors, not the clean absence of tool calls.
+- **D**: the coordinator already names the agents it wants to use, so awareness is not the problem — execution capability is.` },
+
+{ type:"mc", sub:"5.5", lvl:"intermediate", src:"pdf",
+  question:`Final reports keep making claims without proper source attribution. The search and analysis agents do attach citations to their own outputs, but the synthesis agent loses the claim-to-source linkage when merging findings. What architectural change fixes this most effectively?`,
+  options:[
+    `Add a verification pass in which the report generator uses semantic similarity against the original sources to reconstruct which claim came from which document.`,
+    `Have the coordinator prepend source-identifier prefixes to text at each handoff, then parse those prefixes back out during report generation.`,
+    `Retain full transcripts of every subagent interaction and add a citation-resolution agent that mines the logs to assign attributions before the report is written.`,
+    `Require every subagent to emit structured claim-to-source mappings, and require the synthesis agent to preserve and merge those mappings as it combines findings.`],
+  correct:3,
+  answer:`Attribution survives only if it is carried explicitly, end to end: structured claim-source mappings that synthesis must preserve and merge keep provenance intact through every stage. The alternatives reconstruct instead of preserve:
+- **A**: post-hoc semantic matching is error-prone and misattributes semantically similar claims.
+- **B**: inline text prefixes are fragile — transformations strip or garble them, and the scheme scales poorly.
+- **C**: log mining adds heavy complexity and still infers attribution indirectly rather than keeping it explicit.` },
+
+{ type:"mc", sub:"1.3", lvl:"intermediate", src:"pdf",
+  question:`With the web search and document analysis subagents finished, the coordinator must spawn the synthesis subagent to combine their findings. What is the correct way to supply the synthesis subagent with the information it needs?`,
+  options:[
+    `Give the subagent tool definitions that let it request outputs from the other subagents through callbacks.`,
+    `Embed the full findings from both subagents verbatim in the synthesis subagent's prompt.`,
+    `Pass reference identifiers and grant the subagent read access to a shared store where the other subagents deposited their results.`,
+    `Spawn the subagent with just a short task description, counting on automatic context inheritance from the coordinator.`],
+  correct:2,
+  answer:`Handing over reference identifiers plus read access to a shared results store is the scalable, production-grade pattern: full information fidelity is preserved while the synthesis agent pulls only what it needs, avoiding prompt bloat. The others fail:
+- **A**: callback-based fetching couples subagents together and adds needless complexity.
+- **B**: inlining everything works for small outputs but does not scale and can blow past context limits.
+- **D**: there is no automatic context inheritance — without explicit access to the data, the agent cannot do its job.` },
+
+{ type:"mc", sub:"1.2", lvl:"basic", src:"pdf",
+  question:`The web search subagent has assembled a set of relevant sources, and the document analysis subagent must now examine them. In the standard orchestration model, how does information travel between these two specialized subagents?`,
+  options:[
+    `The coordinator collects the web search agent's output and embeds the relevant findings in the prompt it uses to invoke the document analysis agent.`,
+    `The two agents exchange data over an event-driven message queue, with the analysis agent subscribed to search-completion events.`,
+    `The web search agent calls the document analysis agent directly, passing the discovered sources as parameters.`,
+    `Both agents read and write a shared memory store — search writes its findings, analysis reads them.`],
+  correct:0,
+  answer:`In the standard coordinator pattern, all data flow runs through the orchestrator: it receives each subagent's output and explicitly injects the relevant parts into the next subagent's prompt. The alternatives deviate from this model:
+- **B**: event-driven queues introduce infrastructure that the typical orchestration pattern does not require.
+- **C**: subagents invoking each other directly destroys centralized control and observability.
+- **D**: shared memory is possible in advanced designs but adds complexity that the standard pipeline does not need.` },
+
+{ type:"mc", sub:"5.1", lvl:"intermediate", src:"pdf",
+  question:`In a pipeline, web search yields 25 sources (~120K tokens of raw content), document analysis distills them to 15K tokens of insights, and synthesis produces a 3K-token narrative draft. The coordinator must now hand context to the report generation agent, which needs to produce the final output with accurate citations. Which context-passing strategy best balances completeness and efficiency?`,
+  options:[
+    `Send only the synthesis draft, and let a separate post-processing pipeline match claims back to sources and insert citations after the report exists.`,
+    `Send the entire accumulated context from every prior stage.`,
+    `Send the synthesis draft together with a structured source index mapping the key claims to their source URLs and relevant excerpts.`,
+    `Send a condensed digest of everything upstream, retaining the major findings but crediting sources only by their names.`],
+  correct:2,
+  answer:`Pairing the draft with a compact structured index of claim-to-source mappings (URLs and excerpts) keeps precise attribution available while staying far below the raw 120K-token footprint — the optimal completeness/efficiency trade-off. The others fail one side:
+- **A**: post-hoc citation matching is unreliable and produces wrong or missing citations.
+- **B**: forwarding everything is grossly inefficient and risks exceeding the context window.
+- **D**: name-only attribution loses the granularity needed for precise citation placement.` },
+
+{ type:"mc", sub:"2.1", lvl:"intermediate", src:"pdf",
+  question:`A product-search tool wraps an external catalog API that pages results 50 at a time. Logs show queries often match 200+ products, and the current design — which automatically fetches every page — causes 15-20 second stalls. How should pagination be redesigned?`,
+  options:[
+    `Split the capability into a search tool and a separate fetch-more-results tool for paging.`,
+    `Add server-side relevance ranking and return only the 50 highest-ranked items.`,
+    `Add a max-pages parameter (defaulting to 2) that caps how many pages the tool fetches internally.`,
+    `Return the first page along with the total match count and a cursor for retrieving further pages.`],
+  correct:3,
+  answer:`Returning page one plus a total count and continuation cursor gives the agent lazy loading with explicit control: it sees the scope of results immediately and fetches more only when the task requires it. The alternatives are worse trade-offs:
+- **A** surfaces raw pagination mechanics as extra tools, entangling tool usage with control flow.
+- **B** is fast but permanently cuts off access to the rest of the result set.
+- **C** still buries paging decisions inside the tool and may fetch pages nobody needs.` },
+
+{ type:"mc", sub:"2.2", lvl:"basic", src:"pdf",
+  question:`A flight-search tool calls an external airline API that intermittently responds with 503 Service Unavailable. What is the most effective way for the tool implementation to deal with this error?`,
+  options:[
+    `Return an empty flight list, as though the search ran successfully but matched nothing.`,
+    `Log the failure internally and hand back an empty response so the model simply continues without flight data.`,
+    `Put an error message in the tool result stating that the service is temporarily down.`,
+    `Retry automatically — up to five attempts with exponential backoff — before returning anything to the agent.`],
+  correct:3,
+  answer:`A 503 is a transient failure, and the tool layer is the right place to absorb it: automatic retries with exponential backoff usually succeed and only surface an error if all attempts fail, maximizing reliability. The others mishandle it:
+- **A** disguises an outage as "no flights exist," leading the agent to false conclusions.
+- **B** likewise swallows the failure signal, so no corrective action can occur.
+- **C** is honest but gives up immediately on a failure that a retry would likely have recovered.` },
+
+{ type:"mc", sub:"2.4", lvl:"intermediate", src:"pdf",
+  question:`An MCP server exposes a check_availability tool backed by an external calendar API. Testing produces three failures: (1) the tool is invoked without the required user_email argument; (2) the calendar API returns 404 because the named user does not exist; (3) the calendar API returns 503 because the service is briefly down. Under MCP's error-handling model, how should each be reported?`,
+  options:[
+    `All three as tool results carrying isError: true.`,
+    `Errors 1 and 2 as JSON-RPC protocol errors; error 3 surfaced through a tool result that sets isError: true.`,
+    `Error 1 as a JSON-RPC protocol error; errors 2 and 3 surfaced through tool results that set isError: true.`,
+    `All three as JSON-RPC protocol errors.`],
+  correct:2,
+  answer:`MCP separates protocol-level problems from execution-level outcomes:
+- A missing required parameter (error 1) means the request itself is invalid — a **JSON-RPC protocol error**.
+- A 404 for a nonexistent user (error 2) is a legitimate execution outcome with a meaningful failure — a **tool result with isError: true**.
+- A transient 503 (error 3) is likewise an execution-level external failure — also **isError: true**.
+Option A wrongly demotes malformed input to a tool result; B wrongly promotes a valid "user not found" outcome to a protocol error; D treats external API outcomes as protocol failures, which they are not.` },
+
+{ type:"mc", sub:"2.1", lvl:"basic", src:"pdf",
+  question:`A document-lookup tool currently replies in prose, e.g. "3 matches: Q3 Hiring Plan, Q3 Hiring Forecast, Yearly Summary." In later steps the agent must operate on particular documents — fetching them, running further queries against them, chaining operations. Which return format best supports these multi-step workflows?`,
+  options:[
+    `Clickable URLs that open each document in the user's browser.`,
+    `Structured data containing a stable document ID plus metadata for every result.`,
+    `A JSON array holding just the document titles pulled from the search results.`,
+    `Richer human-readable descriptions that add details such as file size and authors.`],
+  correct:1,
+  answer:`Stable IDs with structured metadata let the agent reference exact documents programmatically in follow-up tool calls, which is what reliable multi-step chaining requires. The others fall short:
+- **A**: browser URLs serve human readers, not an agent that must feed identifiers into subsequent operations.
+- **C**: titles are ambiguous (two "Q3 Hiring" documents here) and are not stable identifiers.
+- **D**: more prose detail helps users but remains unstructured and unusable for precise agent operations.` },
+
+{ type:"mc", sub:"2.3", lvl:"advanced", src:"pdf",
+  question:`An agent has 50+ specialized API connectors, and tool-selection accuracy has fallen to 58% as the library grew. You add a search_connectors(description) discovery tool, but in testing the agent often skips the search and invokes connectors directly (frequently the wrong ones), or searches and then still picks a poor match from the results. Which tool-composition design addresses both failure modes?`,
+  options:[
+    `Give each connector built-in compatibility validation that returns descriptive errors when a request does not fit it.`,
+    `Build a composite find_and_execute(description, params) tool that locates the best-matching connector and runs it in one step.`,
+    `Enrich every connector description with usage samples, edge cases, and input requirements, plus few-shot examples of the search-then-use workflow.`,
+    `Make search_connectors dynamically register its matches into the agent's available toolset — connectors start hidden and become callable (and stay callable) only after discovery.`],
+  correct:3,
+  answer:`Starting connectors as unavailable and letting search unlock them structurally enforces the search-first workflow — direct calls to undiscovered tools are impossible — and shrinks the visible toolset to the filtered matches, which improves selection among them. The others do not fix both problems:
+- **A** only reports errors after a bad choice; initial selection accuracy is unchanged.
+- **B** hides the choice entirely, removing the agent's reasoning and making failures opaque to debug.
+- **C** relies on the agent voluntarily following guidance, which does not scale reliably across 50+ tools.` },
+
+{ type:"mc", sub:"2.2", lvl:"intermediate", src:"pdf",
+  question:`A publish-article tool talks to a CMS API that produces both transient failures (network timeouts, 503s) and permanent ones (403 permission denied, 422 validation errors). Today every error goes straight back to the agent, which wastes turns retrying failures that can never succeed. How should error handling be divided between the tool implementation and the agent?`,
+  options:[
+    `Handle everything in the tool: retry every error type with exponential backoff and only report failure after the retry budget is spent.`,
+    `Retry transient errors (timeouts, 503s) automatically inside the tool, and pass permanent errors (permissions, validation) to the agent with descriptive messages so it can correct course.`,
+    `Forward every error to the agent immediately with full context and let it decide what to retry and how often, keeping the tool stateless and simple.`,
+    `Wrap everything in a universal handler that returns a generic "tool unavailable - try again later" message, insulating the agent from error details.`],
+  correct:1,
+  answer:`The clean division: the tool absorbs recoverable transient failures via automatic retries, while non-transient errors — which need a behavioral fix, not a retry — reach the agent with enough detail to act on (fix inputs, request permissions). The others blur this line:
+- **A** burns time retrying 403s and 422s that will never succeed and withholds actionable feedback.
+- **C** pushes retry mechanics onto the agent, reproducing the current wasted-turn behavior.
+- **D** strips out the very details the agent needs to take corrective action.` },
+
+{ type:"mc", sub:"1.4", lvl:"advanced", src:"pdf",
+  question:`A remove_team_member tool offers a dry_run boolean so impacts can be previewed before execution, but monitoring shows the agent skips the preview and calls dry_run=false directly in 15% of cases. Policy requires that a preview run first and that the user explicitly confirm it before any removal executes. Which design enforces this most reliably?`,
+  options:[
+    `Add server-side validation allowing dry_run=false only if a dry_run=true call with identical parameters happened within the previous 60 seconds.`,
+    `Split into two tools: preview_remove_member returns the impact details plus a single-use confirmation token, and execute_remove_member will only run when given that token, tying execution to the exact previewed action.`,
+    `Mark the tool as confirmation-required and rely on the orchestration layer to ask the user for approval before forwarding calls to such tools.`,
+    `Strengthen the tool description with explicit instructions and few-shot examples mandating dry_run=true first and user confirmation before dry_run=false.`],
+  correct:1,
+  answer:`A preview tool that issues a single-use confirmation token, which the execute tool requires, makes the workflow structurally unskippable — execution is cryptographically bound to a specific reviewed preview, so no prompting pattern can bypass it. The alternatives are enforceable only in part:
+- **A**: a time-window check is brittle and proves nothing about whether the user actually saw or approved the preview.
+- **C**: depends on orchestration behaving correctly and can be bypassed or misconfigured.
+- **D**: instruction-based compliance is exactly what is already failing 15% of the time.` },
+
+{ type:"mc", sub:"1.4", lvl:"intermediate", src:"pdf",
+  question:`An expense-reimbursement agent handles hundreds of daily requests through a reimbursement-processing tool. Policy says amounts over $500 require managerial approval before payout, and this threshold must hold no matter how the agent is prompted. Which design makes the $500 rule impossible to bypass?`,
+  options:[
+    `The tool takes an approved_by_manager flag; the system prompt tells the agent to set it true only after verifying approval, and a nightly audit script reviews every reimbursement where the flag was true.`,
+    `Offer two tools — an auto-reimburse tool hard-capped at $500 and a manager-approval tool — with detailed prompt instructions on choosing between them, plus a PostToolUse hook that logs which tool was used.`,
+    `The tool accepts amount and details and enforces the threshold internally: under $500 it disburses and confirms; over $500 it opens a pending approval request and reports that manager review is awaited.`,
+    `A PreToolUse hook inspects the amount before the tool runs and, when it exceeds $500, injects a requires_approval flag into the context that the tool checks before disbursing.`],
+  correct:2,
+  answer:`Only enforcement embedded in the tool's own execution path is truly tamper-proof: the tool inspects the amount itself and routes large requests into a pending-approval state, so no prompt manipulation can produce an unapproved payout. The others leave gaps:
+- **A** trusts the agent to set a flag honestly and catches violations only after the money has moved.
+- **B** still depends on the agent choosing the right tool; logging aids audits but prevents nothing.
+- **D**: hooks can be bypassed or misconfigured, and the design still relies on downstream logic honoring the injected flag.` },
+
+{ type:"mc", sub:"2.1", lvl:"basic", src:"pdf",
+  question:`An order-management agent needs three operations: issuing a refund (needs amount and reason), canceling an order (needs reason), and reshipping (needs a shipping address). All three share an order_id but differ in their other requirements. Testing shows the agent frequently omits required parameters or supplies irrelevant ones. Which design change most improves parameter accuracy?`,
+  options:[
+    `Split into three dedicated tools, each declaring only the parameters that its own operation requires.`,
+    `Keep one combined tool with everything optional, and add few-shot examples in the system prompt showing the right parameter combination for each operation.`,
+    `Keep one combined tool but encode JSON Schema if-then-else conditionals so that, for example, amount is required only when the operation is a refund.`,
+    `Keep one combined tool with a nested operation object whose internal shape varies by operation type, explained in the tool description.`],
+  correct:0,
+  answer:`Separate tools with minimal, operation-specific schemas remove the ambiguity at its source: for any given call the agent sees exactly the parameters that matter, so omissions and extraneous fields largely disappear. The alternatives keep the ambiguity:
+- **B**: examples help but an all-optional schema still invites wrong combinations.
+- **C**: conditional schema logic is technically valid yet more complex and less reliable than simply splitting the tools.
+- **D**: a variably-shaped nested object raises cognitive load and makes consistent, correct parameterization harder.` },
+
+{ type:"mc", sub:"2.1", lvl:"basic", src:"pdf",
+  question:`A tool in your finance agent reports the total value of a user's investment portfolio. You must choose whether the tool returns a JSON object with well-defined fields or a human-readable sentence. What is the main benefit of the field-based structured response?`,
+  options:[
+    `JSON encoding is far more token-efficient than prose, which meaningfully lowers your API spend.`,
+    `The agent can pull out exact values directly from named fields instead of parsing prose, cutting down mistakes in later steps.`,
+    `The model handles JSON deterministically, so value extraction becomes substantially more accurate by construction.`,
+    `A JSON schema automatically verifies that the backing API returned correct figures before the agent consumes them.`],
+  correct:1,
+  answer:`**B is correct.** Named, predictable fields let the agent read specific values reliably rather than inferring them from free-form text, which reduces downstream errors.
+- **A**: JSON is not inherently more compact than prose — token counts depend on content, and JSON can even cost more.
+- **C**: The model remains probabilistic; structure helps, but nothing about JSON makes model processing deterministic.
+- **D**: Schemas constrain shape only — they cannot certify that the data the API returned is actually correct.` },
+
+{ type:"mc", sub:"2.1", lvl:"intermediate", src:"pdf",
+  question:`A clinic-booking agent first calls get_available_slots(date, provider_id) and then book_appointment(provider_id, slot_time, patient_id). Support data shows 15% of bookings fail with "slot no longer available" because a different user grabs the slot in the window between the availability lookup and the booking call. What tool redesign best resolves this?`,
+  options:[
+    `Enhance book_appointment so failures come back with rich detail, including a list of currently open alternative slots, letting the agent retry with another time.`,
+    `Leave the two tools as-is but instruct the agent in its system prompt to re-fetch availability and pick a different slot whenever a booking fails.`,
+    `Introduce a hold_slot(provider_id, slot_time) tool that places a 60-second temporary lock, which the agent must invoke between checking and booking.`,
+    `Merge the pair into one find_and_book_appointment tool that checks and reserves in a single atomic operation, returning either a confirmation or the open alternatives.`],
+  correct:3,
+  answer:`**D is correct.** Collapsing check-then-book into one atomic operation removes the time gap entirely, so no competing user can take the slot mid-flow — the race condition is eliminated rather than mitigated.
+- **A**: Richer failure payloads improve recovery after the fact but leave the race window open.
+- **B**: Prompt-driven retries depend on agent behavior and still race against other users.
+- **C**: A temporary hold shrinks the window but adds complexity and more steps that can themselves fail.` },
+
+{ type:"mc", sub:"2.1", lvl:"intermediate", src:"pdf",
+  question:`A fitness agent exposes log_workout with parameters exercise_type (string), value (number), and measurement (string). In production, 23% of calls mix incompatible values — e.g., measurement "reps" for a run, or "miles" for bench press. The exercise catalog splits cleanly into cardio (tracked by time or distance) and strength (tracked by reps and sets). Which change most effectively prevents these invalid calls?`,
+  options:[
+    `Validate combinations on the server and return descriptive error messages so the agent can correct itself on a retry.`,
+    `Constrain measurement with an enum of "minutes", "miles", "reps", and "sets" so free-form measurement strings are impossible.`,
+    `Enrich the tool description with concrete valid pairings ("running: minutes or miles; push-ups: reps") plus rules per exercise category.`,
+    `Replace the single tool with log_cardio_workout (duration_minutes or distance_miles) and log_strength_workout (reps and sets).`],
+  correct:3,
+  answer:`**D is correct.** Splitting along the natural cardio/strength boundary makes invalid pairings structurally impossible — each tool's schema only contains parameters that make sense for that category, so correctness is enforced at the schema level.
+- **A**: Server-side validation catches mistakes after they happen, burning turns instead of preventing errors.
+- **B**: An enum limits the vocabulary but still permits mismatches like "miles" on a strength exercise.
+- **C**: Description-based examples are guidance, not enforcement — the agent can still combine them wrongly.` },
+
+{ type:"mc", sub:"2.1", lvl:"basic", src:"pdf",
+  question:`An MCP server offers archive_file(file_id) and delete_file(file_id), currently described only as "Archives a file" and "Deletes a file." Logs show the agent invokes delete_file when users say "remove old backups," even though policy says backups must be archived. Which change most directly improves the agent's choice of tool?`,
+  options:[
+    `Insert a confirmation gate that makes users type "CONFIRM DELETE" before delete_file runs.`,
+    `Have the server reject delete_file calls on backup-tagged files and return an error pointing the agent to archive_file instead.`,
+    `Rewrite both tool descriptions with explicit use-case guidance, including a note on delete_file such as "Do not use for backup files."`,
+    `Add few-shot demonstrations to the system prompt showing that requests mentioning "backup" or "old" map to archive_file.`],
+  correct:2,
+  answer:`**C is correct.** Tool descriptions are the primary signal the model uses when deciding which tool to call; spelling out use cases and explicit exclusions directly shapes that selection reasoning so the wrong tool is far less likely to be chosen in the first place.
+- **A**: A typed confirmation blocks accidental execution but does nothing to improve the selection decision.
+- **B**: Server-side rejection enforces policy only after the wrong pick has already been made.
+- **D**: Prompt few-shots can help but are a less direct, less reliable lever than the descriptions themselves.` },
+
+{ type:"mc", sub:"1.4", lvl:"intermediate", src:"pdf",
+  question:`In a CRM agent, the delete_contact tool handles requests such as "remove the duplicate record for Orion Labs." Its database contains several nearly identical names ("Orion Labs," "Orion Laboratories," "ORION Labs Ltd."), and 8% of deletions get reversed within a day because the wrong record was removed. Meanwhile users complain the existing multi-step confirmation makes routine cleanup tedious. Which design best cuts the error rate without sacrificing efficiency?`,
+  options:[
+    `Show the candidate matches side by side with distinguishing fields and ask for a single-click confirmation of the intended record before deleting.`,
+    `Force users to provide the exact record ID from the CRM UI instead of referring to contacts by name.`,
+    `Roll out automated duplicate detection that merges likely duplicates, so manual deletion requests become unnecessary.`,
+    `Switch to soft-delete with a 30-day undo window so mistakes are recoverable without adding steps to the flow.`],
+  correct:0,
+  answer:`**A is correct.** Surfacing the ambiguous candidates with their differentiating details attacks the actual failure mode — misidentification — while a one-click confirm keeps the workflow light, satisfying both the accuracy and the friction requirements.
+- **B**: Requiring exact IDs would reduce errors but imposes heavy friction, the very complaint users raised.
+- **C**: Auto-merge is a worthwhile separate initiative but does not stop wrong deletions on the manual requests that remain.
+- **D**: Soft-delete softens the consequences after an error; it does nothing to lower the error rate itself.` },
+
+{ type:"mc", sub:"4.2", lvl:"intermediate", src:"pdf",
+  question:`After adopting tool use with strict schemas for a document-extraction pipeline, malformed JSON is gone, yet 5% of outputs are schema-valid but carry empty arrays or nulls in mandatory fields such as citations and methodology. Spot checks confirm the source documents do contain that information, just in heterogeneous forms — inline citations versus bibliographies, dedicated methodology sections versus details woven into the introduction. What is the most effective fix?`,
+  options:[
+    `Relax the schema so citations and methodology become optional, routing incomplete records to manual review instead of failing validation.`,
+    `Add a regex-based post-processing step that searches each source document for citation-like patterns and methodology-related keywords, filling in fields the model left empty.`,
+    `Provide few-shot examples covering documents with differing layouts, demonstrating how to recognize citations in multiple styles and find methodology content across section types.`,
+    `Add retry logic that resubmits the request whenever validation finds an empty required field.`],
+  correct:2,
+  answer:`**C is correct.** The failures stem from format diversity the model has not been shown how to handle; few-shot examples spanning those varied structures teach it to generalize, fixing the root cause of the missed extractions.
+- **A**: Making the fields optional lowers the quality bar and sidesteps the extraction problem rather than solving it.
+- **B**: Regex heuristics are brittle across varied formats, especially for loosely structured content like methodology.
+- **D**: Retrying with unchanged guidance will keep producing the same incomplete results.` },
+]},
+
 ];
