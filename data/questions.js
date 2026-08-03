@@ -1912,7 +1912,7 @@ Curation beats capacity: targeted retrieval + good prompt ordering usually outpe
 ]},
 
 /* ============ PDF BANK (ExamAuthor free sample, 30 Qs, rewritten originally) ============ */
-{ id:"pdf", name:"📄 Banco PDF (30)", questions:[
+{ id:"pdf", name:"📄 ExamTopics (34)", questions:[
 { type:"mc", sub:"1.3", lvl:"basic", src:"pdf",
   question:`A coordinator orchestrates a research pipeline in which a web search subagent and a document analysis subagent both finish their work. The coordinator then calls a synthesis subagent, but that agent replies that it cannot proceed because it received no research material. What is the most probable root cause?`,
   options:[
@@ -2303,6 +2303,54 @@ Option A wrongly demotes malformed input to a tool result; B wrongly promotes a 
 - **A**: Making the fields optional lowers the quality bar and sidesteps the extraction problem rather than solving it.
 - **B**: Regex heuristics are brittle across varied formats, especially for loosely structured content like methodology.
 - **D**: Retrying with unchanged guidance will keep producing the same incomplete results.` },
+
+  { type:"mc", sub:"5.5", lvl:"intermediate", src:"examtopics",
+    question:`In a research pipeline, findings flow through two summarization stages before a writer agent drafts the final report. QA finds the drafts assert facts with no traceable origin: by the time the writer runs, nobody can tell which source backed which statement, because that linkage evaporated during summarization. What best guarantees source attribution in the final output?`,
+    options:[
+      `Let the writer agent re-run searches at the end to hunt down sources matching each claim in its draft.`,
+      `Make every stage emit structured output that keeps content summaries and source metadata (URL, document name, page) as separate, linked fields.`,
+      `Drop summarization entirely and feed the raw outputs of the earlier stages straight to the writer.`,
+      `Tell the middle stage to weave citation markers into its summary prose using a consistent format.`],
+    correct:1,
+    answer:`**Structured separation of content and source metadata** is the only option that makes attribution survive every handoff **by construction**:
+- Each finding travels as {summary, url, doc, page} — summarization can compress the text while the linkage fields pass through intact.
+- Re-searching afterwards (A) guesses at attribution and can match the wrong source. Raw pass-through (C) blows the context budget and just relocates the problem. Inline citations in prose (D) are exactly what the next summarization pass mangles or drops.` },
+
+  { type:"mc", sub:"1.3", lvl:"intermediate", src:"examtopics",
+    question:`A pipeline accumulates: raw search content (≈120K tokens), extracted insights (≈15K), and a coherent synthesis draft (≈3K). The coordinator now invokes the final report agent, which must produce cited output. What should the coordinator pass to it for the best completeness/efficiency balance?`,
+    options:[
+      `Everything: the full accumulated context from every prior stage.`,
+      `The synthesis draft plus a structured source index mapping each key claim to its source URL and the relevant excerpt.`,
+      `Only the synthesis draft, leaving citations to a separate post-processing pipeline that matches claims to sources afterwards.`,
+      `A condensed recap of all stages that names the sources but includes no excerpts.`],
+    correct:1,
+    answer:`**Draft + structured claim→source index** gives the report agent exactly what the task needs:
+- The narrative to polish, and for each claim the **URL + supporting excerpt** to cite precisely — a few K tokens instead of 135K.
+- Full context (A) drowns the agent in raw material it doesn't need. Post-hoc matching (C) re-derives attribution by guesswork after the fact. Names without excerpts (D) let the agent cite sources it cannot verify, inviting misattribution.` },
+
+  { type:"mc", sub:"1.7", lvl:"advanced", src:"examtopics",
+    question:`A long-running multi-agent job dies partway through a large corpus: search finished, extraction is half done, pattern analysis barely started. You must resume without redoing completed work and without corrupting what was found. Which state-management design handles the restore best?`,
+    options:[
+      `Each agent persists a structured export of its completed work to a known location; on resume the coordinator reads the manifest and injects the relevant state into each agent's prompt.`,
+      `Index all outputs into a shared vector store and have each resuming agent retrieve prior findings via semantic search.`,
+      `Each agent keeps its own private state file and reloads it independently when it starts.`,
+      `Persist the coordinator's full conversation log and hand it to every agent on resume.`],
+    correct:0,
+    answer:`**Structured exports + coordinator-driven manifest injection** wins on both fidelity and efficiency:
+- Completed work is stored **losslessly and explicitly**; the coordinator knows exactly what is done and injects each agent with precisely the state it needs to continue.
+- Semantic retrieval (B) is approximate — resume logic needs exact state, not "relevant-ish" matches. Independent per-agent files (C) leave no global view of what remains, so the coordinator can't orchestrate the restart. Replaying the whole conversation log (D) buries the needed state in noise and wastes the context budget.` },
+
+  { type:"mc", sub:"2.3", lvl:"intermediate", src:"examtopics",
+    question:`Four specialized subagents were each wired up with the platform's entire catalog of 18 tools. In testing, they routinely reach for tools outside their role — the synthesizer fires web searches, the report writer tries document analysis. What is the PRIMARY cause?`,
+    options:[
+      `Selecting among 18 options instead of the 4-5 relevant to the role pushes decision complexity past the point of reliable tool choice.`,
+      `The 18 tool definitions eat so much context window that little room remains for the task itself.`,
+      `The role descriptions in the system prompts contradict the breadth of tool access granted.`,
+      `The coordinator loses track of which subagent has which capability and misroutes tasks.`],
+    correct:0,
+    answer:`The primary cause is **selection complexity from over-provisioning**: every tool beyond the role's needs is another plausible-looking distractor, and reliability of tool choice degrades as the option count grows.
+- Context consumption (B) is a real but secondary cost — it degrades capacity, not primarily selection accuracy. A prompt/access mismatch (C) contributes tension but doesn't explain systematic wrong picks of well-understood tools. Misrouting by the coordinator (D) describes a different failure — these agents received the right tasks and chose the wrong tools themselves.
+- Fix: scope each agent's tools to its role (4-5 relevant ones); capability beyond that comes via delegation.` },
 ]},
 
 ];
