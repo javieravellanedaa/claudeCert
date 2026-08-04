@@ -162,6 +162,7 @@
     <div class="tab" data-mode="memoria">🧩 Memoria</div>
     <div class="tab" data-mode="examen">📝 Examen</div>
     <div class="tab" data-mode="grupos">👥 Grupos</div>
+    <div class="tab" data-mode="examtopics">📄 ExamTopics Originals</div>
   </div>
   <div class="spacer"></div>
   <input id="search" class="search" placeholder="🔍 Buscar…" style="display:none" />
@@ -180,6 +181,7 @@
 <script src="data/questions.js"></script>
 <script src="data/matches.js"></script>
 <script src="data/enrich.js"></script>
+<script src="data/examtopics_originals.js"></script>
 <script>
 /* ---------- datos ---------- */
 const DATA=(window.STUDY_DATA||[]);
@@ -788,6 +790,114 @@ function updResult(){
   </div>`;
 }
 
+/* ============ MODO EXAMTOPICS ORIGINALS ============ */
+let etIdx=0,etShowAns=false;
+const ET=(window.EXAMTOPICS_ORIGINALS||[]);
+function renderExamtopics(){
+  search.style.display='none';
+  app.innerHTML=`
+  <main style="width:100%"><div class="stage">
+    <!-- Header banner -->
+    <div style="background:linear-gradient(135deg,#2b1a0a,#3d2510);border:1px solid #c97a2a;border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:4px">📄 ExamTopics Originals</div>
+        <div style="font-size:20px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
+        <div style="font-size:13px;color:#9aa7b4;margin-top:3px">Preguntas originales · sin parafraseo · <b style="color:#e89a6b">${ET.length} preguntas</b> disponibles · <span style="color:#4cc38a">Q1–Q30 PDF + Q31–Q41 web</span></div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="background:#0d1117;border:1px solid #c97a2a;border-radius:20px;padding:4px 14px;font-size:12px;color:#c97a2a;font-weight:700">📄 ExamAuthor PDF</span>
+        <span style="background:#0d1117;border:1px solid #4cc38a;border-radius:20px;padding:4px 14px;font-size:12px;color:#4cc38a;font-weight:700">🌐 examauthor.com</span>
+      </div>
+    </div>
+    <!-- Question nav -->
+    <div class="toolbar" style="margin-bottom:16px;flex-wrap:wrap;gap:6px" id="etNav"></div>
+    <!-- Card -->
+    <div id="etCard"></div>
+    <div class="nav" style="margin-top:18px">
+      <button class="btn ghost" id="etPrev">← Anterior</button>
+      <button class="btn ghost" id="etJump" style="font-size:13px">Ir a nº…</button>
+      <button class="btn" id="etNext">Siguiente →</button>
+    </div>
+  </div></main>`;
+  buildEtNav();
+  drawEtCard();
+  document.getElementById('etPrev').onclick=()=>{if(etIdx>0){etIdx--;etShowAns=false;drawEtCard();buildEtNav()}};
+  document.getElementById('etNext').onclick=()=>{if(etIdx<ET.length-1){etIdx++;etShowAns=false;drawEtCard();buildEtNav()}};
+  document.getElementById('etJump').onclick=()=>{
+    const n=prompt(`Ir a pregunta (1 – ${ET.length}):`);
+    const ni=parseInt(n)-1;
+    if(!isNaN(ni)&&ni>=0&&ni<ET.length){etIdx=ni;etShowAns=false;drawEtCard();buildEtNav()}
+  };
+}
+function buildEtNav(){
+  const nav=document.getElementById('etNav');if(!nav)return;
+  // Show up to 10 page numbers around current
+  const total=ET.length,cur=etIdx;
+  let start=Math.max(0,cur-5),end=Math.min(total-1,start+9);
+  if(end-start<9)start=Math.max(0,end-9);
+  let html=`<span style="color:var(--muted);font-size:13px;margin-right:4px">${cur+1}/${total}</span>`;
+  if(start>0)html+=`<span class="chip" data-ei="0">1</span><span style="color:var(--muted)">…</span>`;
+  for(let i=start;i<=end;i++){
+    html+=`<span class="chip${i===cur?' on':''}" data-ei="${i}">${i+1}</span>`;
+  }
+  if(end<total-1)html+=`<span style="color:var(--muted)">…</span><span class="chip" data-ei="${total-1}">${total}</span>`;
+  nav.innerHTML=html;
+  nav.querySelectorAll('.chip[data-ei]').forEach(c=>c.onclick=()=>{etIdx=+c.dataset.ei;etShowAns=false;drawEtCard();buildEtNav()});
+}
+function drawEtCard(){
+  const host=document.getElementById('etCard');if(!host||!ET.length)return;
+  const q=ET[etIdx];
+  const letterMap=['A','B','C','D'];
+  const correctLetter=q.answer;
+  const correctIdx=q.correct;
+  // Format explanation: escape HTML, keep structure
+  function fmtExpl(t){
+    if(!t)return '';
+    t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Bold ✅ and ❌ sections headers
+    t=t.replace(/(✅[^\n]*)/g,'<span style="color:var(--ok);font-weight:700">$1</span>');
+    t=t.replace(/(❌[^\n]*)/g,'<span style="color:var(--bad)">$1</span>');
+    t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    const lines=t.split('\n');let out='',ul=false;
+    for(let ln of lines){
+      if(/^\s*-\s+/.test(ln)){if(!ul){out+='<ul>';ul=true}out+='<li>'+ln.replace(/^\s*-\s+/,'')+'</li>'}
+      else{if(ul){out+='</ul>';ul=false}if(ln.trim())out+='<p style="margin:6px 0">'+ln+'</p>'}
+    }
+    if(ul)out+='</ul>';return out;
+  }
+  let optsHtml='<div class="opts">';
+  q.options.forEach((o,i)=>{
+    const letter=letterMap[i];
+    let cls='opt'+(etShowAns?(i===correctIdx?' correct':(letter!==correctLetter?'':' correct')):'');
+    optsHtml+=`<div class="${cls}${etShowAns?' disabled':''}" data-eti="${i}"><span class="k">${letter}</span><span>${o}</span>`;
+    if(etShowAns&&i===correctIdx)optsHtml+=` <span style="margin-left:auto;color:var(--ok);font-weight:700">✔</span>`;
+    optsHtml+='</div>';
+  });
+  optsHtml+='</div>';
+  host.innerHTML=`<div class="card">
+    <div class="qmeta">
+      <span class="tag mc">Opción múltiple</span>
+      <span class="tag srcx" title="Fuente original">${q.num<=30?'📄 ExamAuthor PDF':'🌐 examauthor.com'}</span>
+      <span class="tag intermediate">Intermedio</span>
+      <span class="qnum" style="margin-left:auto">Pregunta ${etIdx+1} de ${ET.length} · #${q.num} original</span>
+    </div>
+    <div class="question" style="font-size:18px">${q.question}</div>
+    ${optsHtml}
+    ${etShowAns?'':`<button class="btn" id="etReveal">Mostrar respuesta</button>`}
+    <div class="answer${etShowAns?' show':''}" id="etAns">
+      <h4>Respuesta correcta y explicación</h4>
+      <div class="verdict v">Correcta: ${correctLetter}) ${q.options[correctIdx]}</div>
+      <div class="body" style="margin-top:12px">${fmtExpl(q.explanation)}</div>
+    </div>
+  </div>`;
+  if(!etShowAns){
+    document.getElementById('etReveal').onclick=()=>{etShowAns=true;drawEtCard();buildEtNav()};
+    host.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+      etShowAns=true;drawEtCard();buildEtNav();
+    });
+  }
+}
+
 /* ---------- router ---------- */
 function setMode(m){
   mode=m;
@@ -795,6 +905,7 @@ function setMode(m){
   if(m==='estudio')renderEstudio();
   else if(m==='memoria')renderMemoria();
   else if(m==='grupos')renderGrupos();
+  else if(m==='examtopics')renderExamtopics();
   else renderExamen();
 }
 
