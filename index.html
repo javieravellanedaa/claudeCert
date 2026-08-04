@@ -802,11 +802,12 @@ function renderExamtopics(){
       <div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:4px">📄 ExamTopics Originals</div>
         <div style="font-size:20px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
-        <div style="font-size:13px;color:#9aa7b4;margin-top:3px">Preguntas originales · sin parafraseo · <b style="color:#e89a6b">${ET.length} preguntas</b> disponibles · <span style="color:#4cc38a">Q1–Q30 PDF + Q31–Q41 web</span></div>
+        <div style="font-size:13px;color:#9aa7b4;margin-top:3px">Preguntas originales · sin parafraseo · <b style="color:#e89a6b">${ET.length} preguntas</b> · <span style="color:#4cc38a">Q1–Q41 ExamAuthor + ${ET.length-41} CyberSkill</span></div>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="background:#0d1117;border:1px solid #c97a2a;border-radius:20px;padding:4px 14px;font-size:12px;color:#c97a2a;font-weight:700">📄 ExamAuthor PDF</span>
         <span style="background:#0d1117;border:1px solid #4cc38a;border-radius:20px;padding:4px 14px;font-size:12px;color:#4cc38a;font-weight:700">🌐 examauthor.com</span>
+        <span style="background:#0d1117;border:1px solid #5ac8e0;border-radius:20px;padding:4px 14px;font-size:12px;color:#5ac8e0;font-weight:700">🎯 cyberskill.world</span>
       </div>
     </div>
     <!-- Question nav -->
@@ -877,9 +878,10 @@ function drawEtCard(){
   host.innerHTML=`<div class="card">
     <div class="qmeta">
       <span class="tag mc">Opción múltiple</span>
-      <span class="tag srcx" title="Fuente original">${q.num<=30?'📄 ExamAuthor PDF':'🌐 examauthor.com'}</span>
+      <span class="tag srcx" title="Fuente original">${q.src==='cyberskill'?'🎯 CyberSkill':q.num<=30?'📄 ExamAuthor PDF':'🌐 examauthor.com'}</span>
+      ${q.src==='cyberskill'&&q.domain?`<span class="tag mod" title="Dominio">${q.domain.replace(/_/g,' ')}</span>`:''}
       <span class="tag intermediate">Intermedio</span>
-      <span class="qnum" style="margin-left:auto">Pregunta ${etIdx+1} de ${ET.length} · #${q.num} original</span>
+      <span class="qnum" style="margin-left:auto">Pregunta ${etIdx+1} de ${ET.length}${typeof q.num==='number'?' · #'+q.num+' original':''}</span>
     </div>
     <div class="question" style="font-size:18px">${q.question}</div>
     ${optsHtml}

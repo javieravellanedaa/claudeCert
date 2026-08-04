@@ -654,5 +654,651 @@ window.EXAMTOPICS_ORIGINALS = [
     "type": "mc",
     "src": "examtopics",
     "lvl": "intermediate"
+  },
+  {
+    "num": "cs-1",
+    "question": "An agent has tried three times to resolve a billing issue and the customer is still stuck. The right next step is to:",
+    "options": [
+      "Try the same resolution a fourth time.",
+      "Escalate to a human with the full history and what has been tried, so the customer does not start over.",
+      "Tell the customer to open a new ticket.",
+      "Close the conversation as resolved."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-2",
+    "question": "Documents arrive continuously throughout business hours and need structured data extracted. To reduce costs, you want to use the `Message Batches API` (50% discount, up-to-24-hour processing window). Your SLA specifies that extraction results must be available within 30 hours of document arrival with 99.9% reliability.\nWhich batching strategy is most appropriate?",
+    "options": [
+      "Submit batches every 6 hours containing documents from that window",
+      "Submit a single batch at end of day containing all documents from that day",
+      "Submit batches every 4 hours containing documents from that window",
+      "Use the real-time API for all documents instead of batch processing"
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-3",
+    "question": "A customer returns 4 hours after their initial session about the same billing dispute. The previous 32-turn session contains `lookup_order` results showing \"Status: PENDING, Expected resolution: 24-48 hours.\" In testing, you observe that when resuming sessions with stale tool results, the agent often references the outdated data in responses (e.g., \"I see your refund is still being processed\") even after subsequent fresh tool calls return different information.\nWhat approach most reliably handles returning customers?",
+    "options": [
+      "Resume with full history but filter out previous `tool_result` messages before resuming, keeping only the human/assistant turns so the agent must re-fetch needed data.",
+      "Start a new session, inject a structured summary of the previous interaction (issue type, actions taken, resolution status), then make fresh tool calls before engaging.",
+      "Resume with full history and add a system prompt instruction telling the agent to always prefer the most recent tool results when multiple calls to the same tool exist in context.",
+      "Resume with full history and configure the agent to automatically re-call all previously-used tools at session start to ensure data freshness."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-4",
+    "question": "An engineer used the agent yesterday to analyze a legacy authentication module, identifying two distinct refactoring approaches: extracting a microservice versus refactoring in-place. Today, they want to explore both approaches in depth—having the agent propose specific code changes for each—before deciding which to implement.\nWhat's the most effective way to structure this exploration?",
+    "options": [
+      "Resume yesterday's session to explore the first approach, then start a new session for the second, manually recreating the original context.",
+      "Start two fresh sessions, manually providing a summary of yesterday's analysis findings to establish context.",
+      "Resume yesterday's session and explore both approaches sequentially within the same conversation thread.",
+      "Use `fork_session` to create two branches from yesterday's analysis, exploring one approach in each fork."
+    ],
+    "answer": "D",
+    "correct": 3,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-5",
+    "question": "Your codebase exploration tool stores session IDs to allow engineers to continue investigations across work sessions. An engineer spent an hour yesterday analyzing a legacy authentication module, building context about its architecture and dependencies. They want to continue today. The session ID is valid, but version control shows 3 of the 12 files the agent previously read were modified overnight by a teammate's merge.\nWhat approach best balances efficiency and accuracy?",
+    "options": [
+      "Resume the session without informing the agent about the changed files",
+      "Start a fresh session to ensure the agent works with current codebase state without stale assumptions",
+      "Resume the session and inform the agent which specific files changed for targeted re-analysis",
+      "Resume the session and immediately have the agent re-read all 12 previously analyzed files"
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-6",
+    "question": "An engineer's exploration subagent spent 30 minutes analyzing a legacy payment system, reading 47 files and documenting data flows. The session was interrupted when the engineer's connection dropped. While away, a teammate merged a PR that renamed two utility functions. The engineer wants to continue the same exploration.\nWhat's the most effective approach?",
+    "options": [
+      "Resume the subagent from its previous transcript without mentioning the changes—the architecture understanding remains valid.",
+      "Launch a fresh subagent and include the prior transcript in the initial prompt for context.",
+      "Launch a fresh subagent with a summary of prior findings.",
+      "Resume the subagent from its previous transcript and inform it about the renamed functions."
+    ],
+    "answer": "D",
+    "correct": 3,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-7",
+    "question": "A contract is too long to fit in one context window, and you need fields from across the whole document. The dependable approach is to:",
+    "options": [
+      "Truncate the document to what fits and extract from the first part.",
+      "Chunk the document with slight overlap, extract per chunk, then merge and reconcile the fields.",
+      "Summarize the document first, then extract from the summary.",
+      "Raise the temperature so the model fills in the missing parts."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-8",
+    "question": "A customer raises three separate issues during one session: a refund inquiry (turns 1-15), a subscription question (turns 16-30), and a payment method update (turns 31-45). At turn 48, the customer asks \"What happened with my refund?\" The conversation is approaching context limits.\nWhat strategy best maintains the agent's ability to address all issues throughout the session?",
+    "options": [
+      "Extract and persist structured issue data (order IDs, amounts, statuses) into a separate context layer.",
+      "Rely on MCP tools to re-fetch relevant information on demand when the customer references earlier issues.",
+      "Summarize earlier turns into a narrative description, preserving full message history only for the active issue.",
+      "Implement sliding window context that retains the most recent 30 turns."
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-9",
+    "question": "Three sub-agents searched overlapping territory and several findings repeat across their reports. Before synthesis, the coordinator should:",
+    "options": [
+      "Concatenate all three reports verbatim into the final answer.",
+      "Keep the first report and discard the other two unread.",
+      "Merge the reports, collapse duplicate findings, and keep one cited instance of each.",
+      "Ask the user to remove the duplicates."
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "research_pipeline"
+  },
+  {
+    "num": "cs-10",
+    "question": "The document analysis agent has a single `analyze_document` tool that takes a document and a free-text instruction parameter. During evaluation, requests like \"extract the key financial metrics\" often return narrative summaries, while \"summarize the methodology\" sometimes returns raw data tables. The synthesis agent reports that 35% of analysis results require re-requests with clarified instructions.\nWhat's the most effective way to improve reliability?",
+    "options": [
+      "Split the generic tool into purpose-specific tools—`extract_data_points`, `summarize_content`, `verify_claim_against_source`—each with defined input/output contracts.",
+      "Keep the single tool but add an `analysis_type` enum parameter requiring explicit selection between extraction, summarization, and verification modes.",
+      "Have the coordinator pre-classify each analysis request before passing instructions to the document analysis agent.",
+      "Enhance the tool description with detailed examples showing how different instruction phrasings should map to different output formats."
+    ],
+    "answer": "A",
+    "correct": 0,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "research_pipeline"
+  },
+  {
+    "num": "cs-11",
+    "question": "Production logs reveal inconsistent error handling: when `lookup_order` fails, the agent sometimes retries 5+ times (wasteful when the order ID doesn't exist), sometimes escalates immediately (premature for temporary network issues), and sometimes asks users for clarification (inappropriate when the issue is a backend permission error). Investigation shows your MCP tool returns uniform error responses: {\"isError\": true, \"content\": [{\"type\": \"text\", \"text\": \"Operation failed\"}]}. The agent cannot distinguish between error types.\nWhat's the most effective improvement?",
+    "options": [
+      "Enhance error responses with structured metadata: include errorCategory (transient/validation/permission), isRetryable boolean, and a description of what caused the failure.",
+      "Create an `analyze_error` MCP tool the agent calls after any failure to determine the error category and recommended action.",
+      "Implement retry logic with exponential backoff in your MCP server for all errors, returning to the agent only after retries are exhausted.",
+      "Add few-shot examples to the system prompt demonstrating how to interpret error message patterns and select appropriate responses for each."
+    ],
+    "answer": "A",
+    "correct": 0,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-12",
+    "question": "The coordinator provides detailed step-by-step instructions to the web search subagent, specifying exact search queries, source priorities, and date filters. Production monitoring reveals three issues: (1) the subagent reports \"insufficient results\" rather than trying alternative approaches when pre-specified searches fail, (2) research quality drops for emerging topics that don't match expected patterns, and (3) the subagent rarely surfaces valuable tangential sources.\nWhat's the most effective way to improve subagent adaptability?",
+    "options": [
+      "Remove procedural details entirely, delegating with simple goals like \"research X thoroughly\" and relying on the subagent's general capabilities.",
+      "Add explicit fallback directives to the detailed instructions: \"If specified searches yield fewer than N results, attempt alternative query formulations before reporting failure.\"",
+      "Implement a topic classification step where the coordinator categorizes requests as \"well-defined\" or \"exploratory\" and uses different instruction styles for each category.",
+      "Specify research goals and quality criteria (coverage breadth, source diversity, recency) rather than procedural steps, letting the subagent determine its search strategy."
+    ],
+    "answer": "D",
+    "correct": 3,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "research_pipeline"
+  },
+  {
+    "num": "cs-13",
+    "question": "An extractor pulls line items and an invoice total from a receipt. The strongest integrity check before accepting the output is to:",
+    "options": [
+      "Trust the total field because it is printed prominently.",
+      "Verify that the line items sum to the extracted total, and on a mismatch retry or flag the record.",
+      "Check only that the total is a number.",
+      "Accept the first extraction without checking."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-14",
+    "question": "The agent verifies customer identity through a multi-step process before resetting passwords. During testing, you notice that after the customer answers the third verification question, the agent asks them to provide their name again, as if the earlier exchange never happened.\nWhat's the most likely cause of this behavior?",
+    "options": [
+      "The verification tool is clearing the agent's internal state after each successful validation step.",
+      "The prompt lacks instructions telling Claude to remember information across multiple exchanges.",
+      "The conversation history isn't being passed in subsequent API requests.",
+      "Claude's memory retention is limited to two conversational turns by default, requiring explicit configuration to extend it."
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-15",
+    "question": "After integrating a local MCP server providing code analysis tools (`analyze_dependencies`, `find_dead_code`, `calculate_complexity`), you verify the server is healthy and tools appear in the tools/list response. However, you observe that the agent consistently uses Grep to search for import statements instead of calling `analyze_dependencies`—even when users explicitly ask about \"code dependencies.\" Examining tool definitions reveals:\nMCP: `analyze_dependencies` - \"Analyzes dependency graph\"\nBuilt-in: Grep - \"Search file contents for a pattern using regular expressions. Returns matching lines with line numbers and surrounding context.\"\nWhat's the most effective approach to improve the agent's selection of MCP tools?",
+    "options": [
+      "Remove Grep from available tools when the MCP server is connected to eliminate functional overlap.",
+      "Add routing instructions to the system prompt specifying that dependency-related questions should use MCP tools rather than Grep.",
+      "Split `analyze_dependencies` into granular tools (`list_imports`, `resolve_transitive_deps`, `detect_circular_deps`) so each has a focused purpose less likely to overlap with Grep.",
+      "Expand MCP tool descriptions to detail capabilities and outputs—e.g., \"Builds dependency graph showing direct imports, transitive dependencies, and cycles.\""
+    ],
+    "answer": "D",
+    "correct": 3,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-16",
+    "question": "A support agent order-status tool returns data that looks stale and contradicts what the customer sees. The agent should:",
+    "options": [
+      "Report the tool value confidently as the truth.",
+      "Tell the customer the system shows a possibly outdated status, and verify or escalate before committing to it.",
+      "Side with whatever the customer says without checking.",
+      "Keep retrying the tool silently until it agrees with the customer."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-17",
+    "question": "The coordinator agent has `AgentDefinitions` configured for all four specialized subagents, each with appropriate descriptions, prompts, and tool restrictions. During testing, you notice the coordinator correctly reasons about when to delegate—it generates messages like \"I'll ask the web search agent to find sources on this topic\"—but no subagent execution ever occurs. The coordinator then proceeds as if the delegation happened and continues with incomplete information. Logs show no errors.\nWhat is the most likely cause?",
+    "options": [
+      "The coordinator's `max_tokens` setting is too low, causing the Task tool invocation to be truncated before the subagent type parameter can be specified.",
+      "The `AgentDefinitions` are configured correctly, but the coordinator's system prompt doesn't explicitly list the available subagent types, preventing the model from knowing they can be invoked.",
+      "The coordinator's allowedTools configuration doesn't include \"Task\", so while it can reason about delegation, it cannot invoke the tool required to spawn subagents.",
+      "Subagent context isolation means task descriptions from the coordinator don't automatically reach subagents; you need to configure explicit context forwarding in ClaudeAgentOptions."
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "research_pipeline"
+  },
+  {
+    "num": "cs-18",
+    "question": "A user asks a support agent for specific legal advice about a contract dispute. The right behavior is to:",
+    "options": [
+      "Give the best legal opinion the agent can produce.",
+      "Say plainly this is outside what support can advise on, and point the user to the right resource or a human.",
+      "Answer vaguely so the agent does not commit to anything.",
+      "Ignore the legal part and answer something easier."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-19",
+    "question": "A single source file is thousands of lines long and the agent needs one function from it. The agent should:",
+    "options": [
+      "Read the entire file into context to be thorough.",
+      "Search within the file for the function and read only that region and its immediate dependencies.",
+      "Read the first few hundred lines and stop.",
+      "Reformat the file so it is easier to scan."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-20",
+    "question": "A developer asks the agent to investigate why a specific API endpoint intermittently returns 500 errors. The codebase has 200+ files and the developer doesn't know which components are involved. The agent must trace the error through routing, middleware, business logic, and database layers.\nWhat task decomposition approach would be most effective?",
+    "options": [
+      "Have the agent first create a comprehensive plan mapping all code paths through the endpoint before beginning any file exploration or code reading.",
+      "Have the agent dynamically generate investigation subtasks based on what it discovers at each step, adapting its exploration plan as new information about the error path emerges.",
+      "Define a fixed sequence of investigation steps upfront—grep for error patterns, then read error handlers, then check database queries, then examine middleware—executing each step regardless of intermediate findings.",
+      "Run parallel worker agents that simultaneously investigate all four layers, then synthesize their findings to identify where the error originates."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-21",
+    "question": "After your daily batch of 10,000 documents completes, 300 documents (3%) failed with \"`context_length_exceeded`\" errors. The results file identifies each failure by `custom_id`.\nWhat's the most cost-effective approach to process these failures?",
+    "options": [
+      "Reprocess the entire batch with prompt caching enabled to reduce the cost of retrying requests with identical system prompts",
+      "Resubmit only the 300 failed documents after chunking them into smaller pieces, then combine the partial extractions",
+      "Resubmit the entire 10,000 document batch using a model tier with a larger context window",
+      "Increase the `max_tokens` parameter for the 300 failed documents and resubmit them in a new batch"
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-22",
+    "question": "After adding an MCP server with specialized code refactoring tools (`extract_function`, `rename_variable`, `inline_function`), you notice the agent still uses basic text manipulation via Write and Bash sed commands for refactoring tasks. The MCP server is connected and healthy. Examining the configuration, you find each MCP tool has a minimal description like \"`extract_function`: extracts a function from code.\"\nWhat's the most effective way to improve adoption of the MCP refactoring tools?",
+    "options": [
+      "Implement a request classifier that detects refactoring intent and automatically routes those requests to the MCP server before the agent processes them.",
+      "Remove the Write tool from the agent's configuration for refactoring sessions so it must use the MCP tools for code modifications.",
+      "Accept this as expected behavior since simpler tools like sed are more predictable than specialized refactoring tools.",
+      "Enhance the MCP tool descriptions to explain when each tool is preferable to text manipulation and clarify expected inputs and outputs."
+    ],
+    "answer": "D",
+    "correct": 3,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-23",
+    "question": "You're implementing the escalation logic for when the agent should call `escalate_to_human`. Your team proposes four different approaches for triggering escalation.\nWhich approach will most reliably identify cases that genuinely require human intervention?",
+    "options": [
+      "Instruct the agent to escalate when the customer requests a human, when the issue requires policy exceptions, or when the agent cannot make meaningful progress.",
+      "Configure the agent to escalate after three consecutive tool calls that fail to resolve the customer's stated issue, ensuring a reasonable attempt before involving a human.",
+      "Implement sentiment analysis that monitors for frustration indicators (negative language, repeated questions, exclamation marks) and trigger escalation when the frustration score exceeds a configured threshold.",
+      "Build a rules engine that maps specific issue types, customer segments, and product categories to escalation decisions, removing the need for model judgment calls."
+    ],
+    "answer": "A",
+    "correct": 0,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-24",
+    "question": "A customer asks a simple question that the agent can answer directly from the knowledge base. The agent should:",
+    "options": [
+      "Escalate every question to a human to be safe.",
+      "Answer the question directly and clearly, and offer escalation only if the customer needs more.",
+      "Ask the customer to confirm three times before answering.",
+      "Give a long disclaimer and avoid answering."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-25",
+    "question": "An engineer asks the agent to understand how the caching layer works before adding a new cache invalidation trigger. After initial Grep searches, the agent has identified that caching logic spans 15 files including decorators, middleware, and service classes (~8,000 lines total).\nWhat's the most effective next step for building understanding while managing context constraints?",
+    "options": [
+      "Use the Read tool to sequentially load all 15 files, building complete understanding across the full caching implementation.",
+      "Analyze imports and class hierarchies to identify the base cache class, Read that file to understand the interface, then trace specific invalidation implementations.",
+      "Use Grep to search for \"invalidate\" and \"expire\" patterns across all files, then Read only those specific line ranges with minimal surrounding context.",
+      "Use Glob to find files matching common caching patterns (cache.py, caching/), prioritize the largest files by reading them first, then check smaller files for gaps."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-26",
+    "question": "Your system extracts event metadata (date, location, organizer, `attendee_count`) from news articles using a JSON schema with all nullable fields. During evaluation, you observe the model frequently generates plausible but incorrect values for fields not mentioned in the article—for example, outputting \"500\" for `attendee_count` when the source contains no attendance information.\nWhat's the most effective way to reduce these false extractions?",
+    "options": [
+      "Add a post-processing step using a second LLM call to verify each extracted value exists in the source document.",
+      "Add prompt instructions to return null for any field where information is not directly stated in the source.",
+      "Make all schema fields required (non-nullable) with strict validation rules to ensure the model only outputs verifiable data.",
+      "Upgrade to a more capable model tier with improved instruction-following to reduce hallucination tendencies."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-27",
+    "question": "A frustrated customer demands a refund that the policy does not allow. The best response is to:",
+    "options": [
+      "Grant the refund anyway to calm them down.",
+      "Acknowledge the frustration, state the policy plainly, and offer the options that do exist.",
+      "Restate the policy firmly and end the conversation.",
+      "Promise to escalate without intending to."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-28",
+    "question": "A customer sends: \"This is frustrating. I've explained my issue twice and nothing is being resolved. I want to talk to a real person NOW.\" The agent has not yet called any tools to investigate their account.\nWhat should the agent do?",
+    "options": [
+      "Acknowledge the frustration and ask one targeted question to understand the specific issue before escalating.",
+      "Briefly explain what the agent can help with and offer to resolve the issue quickly, escalating only if the customer repeats their request.",
+      "Immediately call `escalate_to_human` with the conversation history.",
+      "First call `get_customer` and `lookup_order` to gather account context, then escalate to a human agent."
+    ],
+    "answer": "A",
+    "correct": 0,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-29",
+    "question": "Your extraction system parses e-commerce product descriptions to extract specifications like dimensions, weight, and materials into JSON. Despite having a well-defined schema, the model inconsistently extracts the \"materials\" field—sometimes returning \"cotton blend\", other times \"Cotton/Polyester mix\", and occasionally omitting the field when material information is clearly present in the source.\nWhat's the most effective way to improve extraction consistency?",
+    "options": [
+      "Make the \"materials\" field required instead of optional in the schema to force the model to always extract a value",
+      "Switch to a more capable model tier since inconsistent extraction indicates insufficient model capability",
+      "Set temperature to 0 to eliminate randomness and ensure deterministic outputs",
+      "Add few-shot examples showing 2-3 complete input-output pairs with standardized material description formats"
+    ],
+    "answer": "D",
+    "correct": 3,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-30",
+    "question": "When implementing your `lookup_order` MCP tool, the backend sometimes returns errors (e.g., \"Order not found\" or temporary database failures).\nWhat is the correct pattern for communicating these errors back to the agent?",
+    "options": [
+      "Log the error server-side and return an empty result to avoid confusing the model",
+      "Return the error message in the tool result content with the isError flag set to true",
+      "Throw an exception from the tool handler so the agent framework can catch and log it",
+      "Return a success response with a \"status\" field indicating the error type"
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-31",
+    "question": "An extractor must label each support ticket with one of five priority levels. To stop the model from inventing new labels, you should:",
+    "options": [
+      "Ask for the priority as free text and clean it up afterward.",
+      "Constrain the field to the five allowed values in the schema or tool definition, and reject anything else.",
+      "List the five levels in the prompt and hope the model complies.",
+      "Accept any label and map unknowns to the closest match later."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-32",
+    "question": "Production monitoring shows that follow-up queries like \"summarize what we learned about market trends\" consistently take 40+ seconds. Investigation reveals the coordinator spawns the synthesis subagent for each summarization request, passing 80K+ tokens of accumulated findings. The coordinator already has these findings in its context from orchestrating the research.\nWhat's the most effective way to improve response time for these follow-up summaries?",
+    "options": [
+      "Pre-generate and cache summaries at multiple granularities whenever new findings accumulate.",
+      "Have the coordinator handle straightforward summarization requests directly using its existing context, reserving subagent spawning for complex analysis.",
+      "Enable prompt caching on the synthesis subagent to reduce the overhead of repeatedly transferring the same research findings.",
+      "Spawn the synthesis subagent with reduced context and have it request specific findings from the coordinator on-demand."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "research_pipeline"
+  },
+  {
+    "num": "cs-33",
+    "question": "Before renaming a widely used function, an agent needs to know what a change would break. The right move is to:",
+    "options": [
+      "Rename it and run the build to see what fails.",
+      "Search the codebase for all references first, then plan the change across the call sites.",
+      "Rename only the definition and assume callers will adapt.",
+      "Add a second function and leave the old one untouched."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "code_exploration"
+  },
+  {
+    "num": "cs-34",
+    "question": "A research agent must gather facts from eight independent web sources and produce one synthesis. None of the sources depend on each other. Which dispatch pattern stays fast without flooding the coordinator context?",
+    "options": [
+      "Read all eight sources into the coordinator context, then write the synthesis in a single pass.",
+      "Dispatch eight sub-agents in parallel, each returning a short structured summary with citations, then synthesize from the summaries.",
+      "Process the sources one at a time in a single agent, appending each full page to the running prompt.",
+      "Pick the two sources that look most promising and ignore the rest to save tokens."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "research_pipeline"
+  },
+  {
+    "num": "cs-35",
+    "question": "Your pipeline uses a tool called `extract_metadata` with a JSON schema for paper details. You've also defined `lookup_citations` and `verify_doi` tools for enrichment. During testing, you notice that when users include requests like \"extract the metadata and tell me how cited it is,\" Claude sometimes calls `lookup_citations` first, which fails because it needs the DOI that `extract_metadata` would provide.\nWhat's the most effective way to ensure structured metadata extraction happens first?",
+    "options": [
+      "Set `tool_choice` to \"any\" so Claude must use a tool, combined with system prompt instructions prioritizing `extract_metadata`.",
+      "Set `tool_choice` to \"auto\" and reorder the tool definitions so `extract_metadata` appears first in the tools array, since Claude prioritizes earlier-listed tools.",
+      "Set `tool_choice` to {\"type\": \"tool\", \"name\": \"`extract_metadata`\"} and process the enrichment requests in subsequent turns after receiving the extracted metadata.",
+      "Set `tool_choice` to {\"type\": \"tool\", \"name\": \"`extract_metadata`\"} for every API call in the pipeline, ensuring Claude always extracts metadata before any enrichment can occur."
+    ],
+    "answer": "C",
+    "correct": 2,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-36",
+    "question": "An invoice extractor reads dates like 03/04/2025 that could be March 4 or April 3. The design that avoids silent errors is to:",
+    "options": [
+      "Assume the United States month-first format everywhere.",
+      "Require an ISO date in the output schema, and when the input is ambiguous, flag the field for review instead of guessing.",
+      "Store the date as the raw string and sort it out later.",
+      "Drop any date that is ambiguous."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "extraction_pipeline"
+  },
+  {
+    "num": "cs-37",
+    "question": "After investigating a billing dispute over 25+ turns, you've identified that duplicate charges occurred due to a payment gateway timeout triggering retry logic. The required refund ($847) exceeds your $500 authorization limit. You need to call `escalate_to_human`, and the human agent won't have access to your conversation transcript.\nWhat context should you pass to enable effective resolution?",
+    "options": [
+      "The customer's original complaint verbatim plus the tool result excerpts showing duplicate transactions.",
+      "A structured summary: customer ID, root cause, refund amount, and recommended action.",
+      "The complete conversation transcript with all tool results.",
+      "Your diagnosis and the refund amount only."
+    ],
+    "answer": "B",
+    "correct": 1,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
+  },
+  {
+    "num": "cs-38",
+    "question": "Your `process_refund` tool returns two types of errors: technical errors (\"503 Service Unavailable\", \"Connection timeout\") that are transient (5% of calls), and business errors (\"Order exceeds 30-day return window\", \"Item already refunded\") that are permanent (12% of calls). Monitoring shows the agent wastes 3-4 turns retrying business errors that can never succeed. Currently, both error types return only a plain text message to Claude.\nWhat's the most effective way to reduce wasted retries while improving customer-facing response quality?",
+    "options": [
+      "Return structured error responses with retryable: false for business errors and a customer-friendly explanation for Claude to use.",
+      "Add few-shot examples showing how to distinguish retryable from non-retryable errors by parsing error message text.",
+      "Add a `check_refund_eligibility` tool that must be called before `process_refund` to prevent business rule violations.",
+      "Implement automatic retry logic at the tool level for technical errors only, passing business errors to Claude without retries."
+    ],
+    "answer": "A",
+    "correct": 0,
+    "explanation": "",
+    "type": "mc",
+    "src": "cyberskill",
+    "lvl": "intermediate",
+    "domain": "customer_support"
   }
 ];
