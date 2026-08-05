@@ -116,17 +116,6 @@
   .empty{color:var(--muted);text-align:center;padding:60px 20px}
   .badge-known{color:var(--ok)}.badge-review{color:var(--warn)}
   footer{padding:9px 20px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;text-align:center}
-  /* memoria */
-  .matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .mcol{display:flex;flex-direction:column;gap:10px}
-  .mcard{border:1px solid var(--border);background:var(--panel);border-radius:10px;padding:12px 14px;cursor:pointer;
-    font-size:14.5px;transition:.15s;min-height:52px;display:flex;align-items:center}
-  .mcard:hover{border-color:var(--accent)}
-  .mcard.sel{border-color:var(--accent);background:#2b2018}
-  .mcard.matched{opacity:.35;border-color:var(--ok);background:#12261a;cursor:default}
-  .mcard.term{font-weight:700}
-  .mcard.bad{border-color:var(--bad);background:#2a1416;animation:shake .3s}
-  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
   .stat{display:flex;gap:18px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
   .stat b{font-size:22px}.stat .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
   .stbox{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 16px;text-align:center}
@@ -151,18 +140,16 @@
   .score{font-size:60px;font-weight:800}.score.pass{color:var(--ok)}.score.fail{color:var(--bad)}
   .configbox{max-width:520px;margin:20px auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px}
   .configrow{display:flex;justify-content:space-between;align-items:center;margin:14px 0;gap:12px}
-  @media(max-width:760px){aside{display:none}main{padding:14px}.question{font-size:17px}.matchgrid{gap:8px}.mcard{font-size:13px}}
+  @media(max-width:760px){aside{display:none}main{padding:14px}.question{font-size:17px}}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">claude<span>Cert</span> <span style="font-size:12px;color:var(--muted);font-weight:600">· Certified Architect – Foundations</span></div>
   <div class="tabs">
-    <div class="tab on" data-mode="estudio">📇 Estudio</div>
-    <div class="tab" data-mode="memoria">🧩 Memoria</div>
+    <div class="tab on" data-mode="examtopics">📄 ExamTopics</div>
     <div class="tab" data-mode="examen">🎓 Examen Real</div>
     <div class="tab" data-mode="grupos">👥 Grupos</div>
-    <div class="tab" data-mode="examtopics">📄 ExamTopics Originals</div>
   </div>
   <div class="spacer"></div>
   <input id="search" class="search" placeholder="🔍 Buscar…" style="display:none" />
@@ -507,65 +494,7 @@ function drawCard(){
   });
 }
 
-/* ============ MODO MEMORIA ============ */
-let mSel=null,mMatched=0,mErr=0,mTotal=0,mTimer=null,mSecs=0;
-function renderMemoria(){
-  search.style.display='none';
-  const cats=['Mixto (todo)',...MATCH.map(c=>c.cat)];
-  app.innerHTML=`<main><div class="stage">
-    <div class="toolbar">
-      <label style="color:var(--muted);font-size:13px">Tema:</label>
-      <select id="mcat">${cats.map((c,i)=>`<option value="${i}">${c}</option>`).join('')}</select>
-      <button class="btn" id="mnew">🔀 Nueva ronda</button>
-      <div class="progresswrap"></div>
-    </div>
-    <div class="stat">
-      <div class="stbox"><div class="lbl">Pares</div><b id="mM">0/0</b></div>
-      <div class="stbox"><div class="lbl">Errores</div><b id="mE">0</b></div>
-      <div class="stbox"><div class="lbl">Tiempo</div><b id="mT">0:00</b></div>
-    </div>
-    <p style="color:var(--muted);font-size:13px;margin-top:-6px">Hacé clic en un <b>concepto</b> (izquierda) y luego en su <b>significado</b> (derecha).</p>
-    <div id="mboard"></div>
-  </div></main>`;
-  document.getElementById('mnew').onclick=newRound;
-  document.getElementById('mcat').onchange=newRound;
-  newRound();
-}
-function newRound(){
-  clearInterval(mTimer);mSecs=0;mErr=0;mMatched=0;mSel=null;
-  const ci=+document.getElementById('mcat').value;
-  let pool=ci===0?MATCH.flatMap(c=>c.pairs):MATCH[ci-1].pairs;
-  const pairs=shuffle(pool).slice(0,Math.min(8,pool.length));
-  mTotal=pairs.length;
-  const terms=shuffle(pairs.map((p,i)=>({...p,pid:i})));
-  const defs=shuffle(pairs.map((p,i)=>({...p,pid:i})));
-  const board=document.getElementById('mboard');
-  board.innerHTML=`<div class="matchgrid">
-    <div class="mcol" id="mterms">${terms.map(p=>`<div class="mcard term" data-pid="${p.pid}" data-side="t">${p.t}</div>`).join('')}</div>
-    <div class="mcol" id="mdefs">${defs.map(p=>`<div class="mcard" data-pid="${p.pid}" data-side="d">${p.d}</div>`).join('')}</div>
-  </div>`;
-  board.querySelectorAll('.mcard').forEach(el=>el.onclick=()=>clickCard(el));
-  updMemStats();
-  mTimer=setInterval(()=>{mSecs++;document.getElementById('mT').textContent=fmt(mSecs)},1000);
-}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function updMemStats(){document.getElementById('mM').textContent=mMatched+'/'+mTotal;document.getElementById('mE').textContent=mErr;}
-function clickCard(el){
-  if(el.classList.contains('matched'))return;
-  if(!mSel){ if(el.dataset.side!=='t'){return} mSel=el;el.classList.add('sel');return }
-  if(el===mSel){el.classList.remove('sel');mSel=null;return}
-  if(el.dataset.side!=='d'){ mSel.classList.remove('sel'); if(el.dataset.side==='t'){mSel=el;el.classList.add('sel')} else mSel=null; return }
-  // compare
-  if(el.dataset.pid===mSel.dataset.pid){
-    el.classList.add('matched');mSel.classList.add('matched');mSel.classList.remove('sel');mSel=null;
-    mMatched++;updMemStats();
-    if(mMatched===mTotal){clearInterval(mTimer);
-      setTimeout(()=>alert(`🎉 ¡Ronda completa!\nTiempo: ${fmt(mSecs)}\nErrores: ${mErr}`),200);}
-  } else {
-    mErr++;updMemStats();const a=mSel,b=el;a.classList.add('bad');b.classList.add('bad');
-    setTimeout(()=>{a.classList.remove('bad','sel');b.classList.remove('bad')},380);mSel=null;
-  }
-}
 
 /* ============ MODO EXAMEN ============ */
 const SCOPES={
@@ -985,7 +914,9 @@ ET.forEach(q=>{const c=classifyEtQuestion(q);q._etDom=c.domain;q._etSub=c.sub;})
 
 /* ---------- State for ET sidebar ---------- */
 let etSelDom='all',etSelSub=null,etList=ET.slice(),etExpanded={};
-let etSelSrcs=new Set(['examtopics','cyberskill','juli']); // all on by default
+let etSelSrcs=new Set(['examtopics','cyberskill','juli']);
+let etStateFilter='all'; // 'all' | 'unseen' | 'review' | 'known'
+let etShuffled=false;
 
 const ET_SRCS=[
   {id:'examtopics',label:'📄 ExamAuthor',color:'#c97a2a'},
@@ -993,10 +924,22 @@ const ET_SRCS=[
   {id:'juli',       label:'📱 Juli',      color:'#f472b6'},
 ];
 
+function etStt(id){
+  try{const s=JSON.parse(localStorage.getItem('etState')||'{}');return s[id]||'';}catch(e){return '';}
+}
+function etSetStt(id,val){
+  try{const s=JSON.parse(localStorage.getItem('etState')||'{}');s[id]=val;localStorage.setItem('etState',JSON.stringify(s));}catch(e){}
+}
+function etGid(q){return (q.src||'et')+'_'+(q.num||q.question.slice(0,20));}
+
 function getEtList(){
   let base=ET.filter(q=>etSelSrcs.has(q.src));
-  if(etSelSub) return base.filter(q=>q._etSub===etSelSub);
-  if(etSelDom&&etSelDom!=='all') return base.filter(q=>q._etDom===etSelDom);
+  if(etSelSub) base=base.filter(q=>q._etSub===etSelSub);
+  else if(etSelDom&&etSelDom!=='all') base=base.filter(q=>q._etDom===etSelDom);
+  if(etStateFilter==='unseen') base=base.filter(q=>!etStt(etGid(q)));
+  else if(etStateFilter==='review') base=base.filter(q=>etStt(etGid(q))==='review');
+  else if(etStateFilter==='known') base=base.filter(q=>etStt(etGid(q))==='known');
+  if(etShuffled) base=shuffle(base);
   return base;
 }
 
@@ -1005,21 +948,53 @@ function renderExamtopics(){
   etList=getEtList();
   if(etIdx>=etList.length)etIdx=0;
 
-  app.innerHTML=`<aside id="etSidebar" style="width:260px;min-width:220px;border-right:1px solid var(--border);padding:14px 10px;overflow-y:auto;background:#0b1018;flex-shrink:0"></aside>
-  <main style="flex:1;overflow:auto;padding:20px 24px"><div class="stage">
+  const knownAll=ET.filter(q=>etStt(etGid(q))==='known').length;
+  const reviewAll=ET.filter(q=>etStt(etGid(q))==='review').length;
+  const unseenAll=ET.filter(q=>!etStt(etGid(q))).length;
+
+  app.innerHTML=`<aside id="etSidebar" style="width:255px;min-width:210px;border-right:1px solid var(--border);padding:14px 8px;overflow-y:auto;background:#0b1018;flex-shrink:0"></aside>
+  <main style="flex:1;overflow:auto;padding:18px 22px"><div class="stage">
     <!-- Header banner -->
-    <div style="background:linear-gradient(135deg,#2b1a0a,#3d2510);border:1px solid #c97a2a;border-radius:14px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <div>
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:2px">📄 ExamTopics Originals</div>
-        <div style="font-size:17px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
-        <div style="font-size:12px;color:#9aa7b4;margin-top:2px"><b style="color:#e89a6b">${ET.length} preguntas</b> · 41 ExamAuthor + 36 CyberSkill + 60 Juli</div>
+    <div style="background:linear-gradient(135deg,#2b1a0a,#3d2510);border:1px solid #c97a2a;border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="flex:1">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:2px">📄 ExamTopics Originals</div>
+        <div style="font-size:16px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--ok)">${knownAll}</div>
+          <div style="font-size:10px;color:var(--muted)">dominadas</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--warn)">${reviewAll}</div>
+          <div style="font-size:10px;color:var(--muted)">repasar</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--muted)">${unseenAll}</div>
+          <div style="font-size:10px;color:var(--muted)">sin ver</div>
+        </div>
+        <div style="width:80px">
+          <div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden">
+            <div style="height:100%;width:${ET.length?Math.round(knownAll/ET.length*100):0}%;background:var(--ok);border-radius:3px"></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">${ET.length?Math.round(knownAll/ET.length*100):0}% dominado</div>
+        </div>
       </div>
     </div>
+    <!-- Toolbar: estado + shuffle -->
+    <div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:6px">
+      <span class="chip ${etStateFilter==='all'?'on':''}" data-esf="all">📚 Todas (${ET.filter(q=>etSelSrcs.has(q.src)).length})</span>
+      <span class="chip ${etStateFilter==='unseen'?'on':''}" data-esf="unseen">👁 Sin ver (${unseenAll})</span>
+      <span class="chip ${etStateFilter==='review'?'on':''}" data-esf="review">⚑ Repasar (${reviewAll})</span>
+      <span class="chip ${etStateFilter==='known'?'on':''}" data-esf="known">✔ Dominadas (${knownAll})</span>
+      <span style="color:var(--border)">|</span>
+      <span class="chip ${etShuffled?'on':''}" id="etShuffleChip">🔀 Mezclar</span>
+    </div>
     <!-- Nav chips -->
-    <div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:5px" id="etNav"></div>
+    <div class="toolbar" style="margin-bottom:12px;flex-wrap:wrap;gap:5px" id="etNav"></div>
     <!-- Card -->
     <div id="etCard"></div>
-    <div class="nav" style="margin-top:16px">
+    <div class="nav" style="margin-top:14px">
       <button class="btn ghost" id="etPrev">← Anterior</button>
       <button class="btn ghost" id="etJump" style="font-size:13px">Ir a nº…</button>
       <button class="btn" id="etNext">Siguiente →</button>
@@ -1029,6 +1004,21 @@ function renderExamtopics(){
   buildEtSidebar();
   buildEtNav();
   drawEtCard();
+
+  // State filter chips
+  app.querySelectorAll('[data-esf]').forEach(chip=>chip.onclick=()=>{
+    etStateFilter=chip.dataset.esf;
+    etIdx=0;etShowAns=false;
+    etList=getEtList();
+    renderExamtopics();
+  });
+  // Shuffle toggle
+  document.getElementById('etShuffleChip').onclick=()=>{
+    etShuffled=!etShuffled;
+    etIdx=0;etShowAns=false;
+    etList=getEtList();
+    renderExamtopics();
+  };
 
   document.getElementById('etPrev').onclick=()=>{if(etIdx>0){etIdx--;etShowAns=false;drawEtCard();buildEtNav()}};
   document.getElementById('etNext').onclick=()=>{if(etIdx<etList.length-1){etIdx++;etShowAns=false;drawEtCard();buildEtNav()}};
@@ -1147,12 +1137,13 @@ function buildEtNav(){
 
 function drawEtCard(){
   const host=document.getElementById('etCard');if(!host)return;
-  if(!etList.length){host.innerHTML='<div class="empty">Sin preguntas en esta selección.<br><small style="color:var(--muted)">Seleccioná otro dominio o subdominios del panel izquierdo.</small></div>';return}
+  if(!etList.length){host.innerHTML='<div class="empty">Sin preguntas en esta selección.<br><small style="color:var(--muted)">Cambiá los filtros del panel izquierdo o la barra de estado.</small></div>';return}
   const q=etList[etIdx];
+  const gid=etGid(q);
+  const status=etStt(gid);
   const letterMap=['A','B','C','D'];
   const correctLetter=q.answer;
   const correctIdx=q.correct;
-  // Find domain info for color accent
   const dom=ET_DOMAINS.find(d=>d.id===q._etDom);
   const domColor=dom?dom.color:'var(--accent)';
   function fmtExpl(t){
@@ -1170,28 +1161,31 @@ function drawEtCard(){
   }
   let optsHtml='<div class="opts">';
   q.options.forEach((o,i)=>{
-    const letter=letterMap[i];
     let cls='opt'+(etShowAns?(i===correctIdx?' correct':''):' ');
     if(etShowAns&&i!==correctIdx)cls='opt wrong disabled';
     else if(etShowAns&&i===correctIdx)cls='opt correct disabled';
-    optsHtml+=`<div class="${cls}" data-eti="${i}"><span class="k">${letter}</span><span>${o}</span>`;
-    if(etShowAns&&i===correctIdx)optsHtml+=` <span style="margin-left:auto;color:var(--ok);font-weight:700">✔</span>`;
+    optsHtml+=`<div class="${cls}" data-eti="${i}"><span class="k">${letterMap[i]}</span><span>${o}</span>`;
+    if(etShowAns&&i===correctIdx)optsHtml+=' <span style="margin-left:auto;color:var(--ok);font-weight:700">✔</span>';
     optsHtml+='</div>';
   });
   optsHtml+='</div>';
-
-  // Domain/sub tag for this question
   const subInfo=ET_DOMAINS.flatMap(d=>d.subs).find(s=>s.id===q._etSub);
   const domTag=dom?`<span class="tag" style="background:${domColor}22;color:${domColor};border:1px solid ${domColor}44">${dom.label.replace('Domain ','D')}</span>`:'';
   const subTag=subInfo?`<span class="tag mod" title="${subInfo.id}">${subInfo.id} · ${subInfo.name}</span>`:'';
   const srcTag=q.src==='cyberskill'?'🎯 CyberSkill':q.src==='juli'?'📱 Juli':typeof q.num==='number'&&q.num<=30?'📄 PDF':'🌐 web';
-
+  const stateBadge=status==='known'?'<span class="badge-known">✔ dominada</span>':status==='review'?'<span class="badge-review">⚑ repasar</span>':'';
+  const assessHtml=etShowAns?`
+    <div class="assess" style="margin-top:14px">
+      <span style="color:var(--muted);font-size:13px">¿Cómo te fue?</span>
+      <button class="btn" style="background:var(--ok)" id="etKnown">✔ La sé</button>
+      <button class="btn" style="background:var(--warn);color:#111" id="etReview">⚑ Repasar</button>
+    </div>`:'';
   host.innerHTML=`<div class="card" style="border-color:${domColor}44">
     <div class="qmeta">
       <span class="tag mc">Opción múltiple</span>
       ${domTag}${subTag}
       <span class="tag srcx">${srcTag}</span>
-      <span class="tag intermediate">Intermedio</span>
+      ${stateBadge}
       <span class="qnum" style="margin-left:auto">${etIdx+1}/${etList.length}${typeof q.num==='number'?' · #'+q.num:''}</span>
     </div>
     <div class="question" style="font-size:17px">${q.question}</div>
@@ -1201,11 +1195,26 @@ function drawEtCard(){
       <h4>Respuesta correcta y explicación</h4>
       <div class="verdict v">Correcta: ${correctLetter}) ${q.options[correctIdx]}</div>
       <div class="body" style="margin-top:10px">${fmtExpl(q.explanation)}</div>
+      ${assessHtml}
     </div>
   </div>`;
   if(!etShowAns){
+    if(!status)etSetStt(gid,'seen');
     document.getElementById('etReveal').onclick=()=>{etShowAns=true;drawEtCard();buildEtNav()};
     host.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{etShowAns=true;drawEtCard();buildEtNav()});
+  } else {
+    document.getElementById('etKnown').onclick=()=>{
+      etSetStt(gid,'known');etShowAns=false;
+      if(etIdx<etList.length-1)etIdx++;else etIdx=0;
+      if(etStateFilter!=='all'){etList=getEtList();if(etIdx>=etList.length)etIdx=0;}
+      drawEtCard();buildEtNav();buildEtSidebar();
+    };
+    document.getElementById('etReview').onclick=()=>{
+      etSetStt(gid,'review');etShowAns=false;
+      if(etIdx<etList.length-1)etIdx++;else etIdx=0;
+      if(etStateFilter!=='all'){etList=getEtList();if(etIdx>=etList.length)etIdx=0;}
+      drawEtCard();buildEtNav();buildEtSidebar();
+    };
   }
 }
 
@@ -1214,9 +1223,7 @@ function drawEtCard(){
 function setMode(m){
   mode=m;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.mode===m));
-  if(m==='estudio')renderEstudio();
-  else if(m==='memoria')renderMemoria();
-  else if(m==='grupos')renderGrupos();
+  if(m==='grupos')renderGrupos();
   else if(m==='examtopics')renderExamtopics();
   else renderExamen();
 }
@@ -1299,7 +1306,7 @@ document.addEventListener('keydown',e=>{
 window.renderExamen=renderExamen;
 Cloud.init();
 renderUserbox();
-setMode('estudio');
+setMode('examtopics');
 (async()=>{
   let em=null;
   try{em=await Cloud.completeEmailLink()}catch(e){console.warn(e)}
