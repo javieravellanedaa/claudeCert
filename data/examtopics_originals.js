@@ -928,23 +928,6 @@ window.EXAMTOPICS_ORIGINALS = [
     "domain": "customer_support"
   },
   {
-    "num": "cs-17",
-    "question": "The coordinator agent has `AgentDefinitions` configured for all four specialized subagents, each with appropriate descriptions, prompts, and tool restrictions. During testing, you notice the coordinator correctly reasons about when to delegate—it generates messages like \"I'll ask the web search agent to find sources on this topic\"—but no subagent execution ever occurs. The coordinator then proceeds as if the delegation happened and continues with incomplete information. Logs show no errors.\nWhat is the most likely cause?",
-    "options": [
-      "The coordinator's `max_tokens` setting is too low, causing the Task tool invocation to be truncated before the subagent type parameter can be specified.",
-      "The `AgentDefinitions` are configured correctly, but the coordinator's system prompt doesn't explicitly list the available subagent types, preventing the model from knowing they can be invoked.",
-      "The coordinator's allowedTools configuration doesn't include \"Task\", so while it can reason about delegation, it cannot invoke the tool required to spawn subagents.",
-      "Subagent context isolation means task descriptions from the coordinator don't automatically reach subagents; you need to configure explicit context forwarding in ClaudeAgentOptions."
-    ],
-    "answer": "C",
-    "correct": 2,
-    "explanation": "",
-    "type": "mc",
-    "src": "cyberskill",
-    "lvl": "intermediate",
-    "domain": "research_pipeline"
-  },
-  {
     "num": "cs-18",
     "question": "A user asks a support agent for specific legal advice about a contract dispute. The right behavior is to:",
     "options": [
@@ -1232,23 +1215,6 @@ window.EXAMTOPICS_ORIGINALS = [
     "src": "cyberskill",
     "lvl": "intermediate",
     "domain": "research_pipeline"
-  },
-  {
-    "num": "cs-35",
-    "question": "Your pipeline uses a tool called `extract_metadata` with a JSON schema for paper details. You've also defined `lookup_citations` and `verify_doi` tools for enrichment. During testing, you notice that when users include requests like \"extract the metadata and tell me how cited it is,\" Claude sometimes calls `lookup_citations` first, which fails because it needs the DOI that `extract_metadata` would provide.\nWhat's the most effective way to ensure structured metadata extraction happens first?",
-    "options": [
-      "Set `tool_choice` to \"any\" so Claude must use a tool, combined with system prompt instructions prioritizing `extract_metadata`.",
-      "Set `tool_choice` to \"auto\" and reorder the tool definitions so `extract_metadata` appears first in the tools array, since Claude prioritizes earlier-listed tools.",
-      "Set `tool_choice` to {\"type\": \"tool\", \"name\": \"`extract_metadata`\"} and process the enrichment requests in subsequent turns after receiving the extracted metadata.",
-      "Set `tool_choice` to {\"type\": \"tool\", \"name\": \"`extract_metadata`\"} for every API call in the pipeline, ensuring Claude always extracts metadata before any enrichment can occur."
-    ],
-    "answer": "C",
-    "correct": 2,
-    "explanation": "",
-    "type": "mc",
-    "src": "cyberskill",
-    "lvl": "intermediate",
-    "domain": "extraction_pipeline"
   },
   {
     "num": "cs-36",

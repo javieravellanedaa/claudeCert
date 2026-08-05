@@ -909,11 +909,19 @@ ET.forEach(q=>{const c=classifyEtQuestion(q);q._etDom=c.domain;q._etSub=c.sub;})
 
 /* ---------- State for ET sidebar ---------- */
 let etSelDom='all',etSelSub=null,etList=ET.slice(),etExpanded={};
+let etSelSrcs=new Set(['examtopics','cyberskill','juli']); // all on by default
+
+const ET_SRCS=[
+  {id:'examtopics',label:'📄 ExamAuthor',color:'#c97a2a'},
+  {id:'cyberskill', label:'🎯 CyberSkill',color:'#5ac8e0'},
+  {id:'juli',       label:'📱 Juli',      color:'#f472b6'},
+];
 
 function getEtList(){
-  if(etSelSub)return ET.filter(q=>q._etSub===etSelSub);
-  if(etSelDom&&etSelDom!=='all')return ET.filter(q=>q._etDom===etSelDom);
-  return ET.slice();
+  let base=ET.filter(q=>etSelSrcs.has(q.src));
+  if(etSelSub) return base.filter(q=>q._etSub===etSelSub);
+  if(etSelDom&&etSelDom!=='all') return base.filter(q=>q._etDom===etSelDom);
+  return base;
 }
 
 function renderExamtopics(){
@@ -928,13 +936,7 @@ function renderExamtopics(){
       <div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:2px">📄 ExamTopics Originals</div>
         <div style="font-size:17px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
-        <div style="font-size:12px;color:#9aa7b4;margin-top:2px"><b style="color:#e89a6b">${ET.length} preguntas</b> · 41 ExamAuthor + 38 CyberSkill + 60 Juli</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-        <span style="background:#0d1117;border:1px solid #c97a2a;border-radius:20px;padding:3px 10px;font-size:11px;color:#c97a2a;font-weight:700">📄 PDF</span>
-        <span style="background:#0d1117;border:1px solid #4cc38a;border-radius:20px;padding:3px 10px;font-size:11px;color:#4cc38a;font-weight:700">🌐 web</span>
-        <span style="background:#0d1117;border:1px solid #5ac8e0;border-radius:20px;padding:3px 10px;font-size:11px;color:#5ac8e0;font-weight:700">🎯 CyberSkill</span>
-        <span style="background:#0d1117;border:1px solid #f472b6;border-radius:20px;padding:3px 10px;font-size:11px;color:#f472b6;font-weight:700">📱 Juli</span>
+        <div style="font-size:12px;color:#9aa7b4;margin-top:2px"><b style="color:#e89a6b">${ET.length} preguntas</b> · 41 ExamAuthor + 36 CyberSkill + 60 Juli</div>
       </div>
     </div>
     <!-- Nav chips -->
@@ -963,45 +965,73 @@ function renderExamtopics(){
 
 function buildEtSidebar(){
   const sb=document.getElementById('etSidebar');if(!sb)return;
-  const total=ET.length;
-  let html=`<h3 style="margin:0 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Dominios · Subdominios</h3>`;
-  // "Todas" row
+  // Count using current source filter
+  const srcFiltered=ET.filter(q=>etSelSrcs.has(q.src));
+  const total=srcFiltered.length;
+
+  // ── Source filter chips ──
+  let html=`<h3 style="margin:0 0 8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Fuente</h3>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">`;
+  ET_SRCS.forEach(s=>{
+    const on=etSelSrcs.has(s.id);
+    const cnt=ET.filter(q=>q.src===s.id).length;
+    html+=`<div data-etsrc="${s.id}" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 10px;border-radius:8px;border:1px solid ${on?s.color:'var(--border)'};background:${on?s.color+'18':'transparent'};transition:all .15s">
+      <span style="font-size:12px;font-weight:600;color:${on?s.color:'var(--muted)'}">${s.label}</span>
+      <span style="font-size:11px;padding:1px 7px;border-radius:10px;background:${on?s.color:'var(--border)'};color:${on?'#0d1117':'var(--muted)'}">${cnt}</span>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // ── Domain / Subdomain tree ──
+  html+=`<h3 style="margin:0 0 8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Dominio</h3>`;
   html+=`<div class="mod ${etSelDom==='all'&&!etSelSub?'active':''}" data-etd="all" style="font-size:13px;padding:8px 10px">
     <span>📚 Todas</span><span class="cnt">${total}</span></div>`;
 
   ET_DOMAINS.forEach(dom=>{
-    const domQs=ET.filter(q=>q._etDom===dom.id).length;
+    const domQs=srcFiltered.filter(q=>q._etDom===dom.id).length;
     const isExpanded=etExpanded[dom.id]||etSelDom===dom.id;
     const isActive=etSelDom===dom.id&&!etSelSub;
-    html+=`<div class="mod ${isActive?'active':''}" data-etd="${dom.id}" style="font-size:12.5px;padding:7px 10px;margin-top:4px">
+    html+=`<div class="mod ${isActive?'active':''}" data-etd="${dom.id}" style="font-size:12.5px;padding:7px 10px;margin-top:3px">
       <span style="display:flex;align-items:center;gap:5px">
         <span style="color:${dom.color};font-size:10px;font-weight:800">${dom.label.replace('Domain ','D')}</span>
-        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="${dom.name}">${dom.name}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:135px" title="${dom.name}">${dom.name}</span>
       </span>
-      <span class="cnt">${domQs}</span></div>`;
-    // Subdomain rows (show if expanded)
+      <span class="cnt" style="${domQs===0?'opacity:.35':''}">${domQs}</span></div>`;
     if(isExpanded){
       dom.subs.forEach(sub=>{
-        const subQs=ET.filter(q=>q._etSub===sub.id).length;
+        const subQs=srcFiltered.filter(q=>q._etSub===sub.id).length;
         const subActive=etSelSub===sub.id;
         html+=`<div class="mod ${subActive?'active':''}" data-ets="${sub.id}" style="font-size:12px;padding:5px 10px 5px 22px;border-radius:8px;margin:1px 0">
-          <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px" title="${sub.id} · ${sub.name}">${sub.id} ${sub.name}</span>
-          <span class="cnt" style="${subQs===0?'opacity:.4':''}">${subQs}</span></div>`;
+          <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px" title="${sub.id} · ${sub.name}">${sub.id} ${sub.name}</span>
+          <span class="cnt" style="${subQs===0?'opacity:.35':''}">${subQs}</span></div>`;
       });
     }
   });
 
-  html+=`<div style="margin-top:14px;padding:8px 10px;border-radius:8px;background:#0d1117;border:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.5">
+  html+=`<div style="margin-top:14px;padding:8px 10px;border-radius:8px;background:#0d1117;border:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.6">
     <b style="color:var(--txt)">CCA-F Blueprint</b><br>
-    D1 Agentic 27%<br>D2 Tools/MCP 18%<br>D3 Claude Code 20%<br>D4 Prompting 20%<br>D5 Context 15%
+    D1 Agentic 27%&nbsp;&nbsp;D2 Tools 18%<br>D3 Code 20%&nbsp;&nbsp;&nbsp;&nbsp;D4 Prompt 20%<br>D5 Context 15%
   </div>`;
 
   sb.innerHTML=html;
 
+  // Source filter toggle
+  sb.querySelectorAll('[data-etsrc]').forEach(el=>el.onclick=()=>{
+    const sid=el.dataset.etsrc;
+    if(etSelSrcs.has(sid)){
+      if(etSelSrcs.size>1) etSelSrcs.delete(sid); // keep at least 1
+    } else {
+      etSelSrcs.add(sid);
+    }
+    etIdx=0;etShowAns=false;
+    etList=getEtList();
+    buildEtSidebar();buildEtNav();drawEtCard();
+  });
+
+  // Domain filter
   sb.querySelectorAll('[data-etd]').forEach(el=>el.onclick=()=>{
     const did=el.dataset.etd;
     if(did===etSelDom&&!etSelSub){
-      // Toggle expand/collapse
       if(did!=='all')etExpanded[did]=!etExpanded[did];
     } else {
       if(etSelDom&&etSelDom!=='all')etExpanded[etSelDom]=false;
@@ -1012,6 +1042,8 @@ function buildEtSidebar(){
     etList=getEtList();
     buildEtSidebar();buildEtNav();drawEtCard();
   });
+
+  // Subdomain filter
   sb.querySelectorAll('[data-ets]').forEach(el=>el.onclick=e=>{
     e.stopPropagation();
     etSelSub=el.dataset.ets;
