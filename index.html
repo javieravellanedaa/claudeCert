@@ -160,7 +160,7 @@
   <div class="tabs">
     <div class="tab on" data-mode="estudio">📇 Estudio</div>
     <div class="tab" data-mode="memoria">🧩 Memoria</div>
-    <div class="tab" data-mode="examen">📝 Examen</div>
+    <div class="tab" data-mode="examen">🎓 Examen Real</div>
     <div class="tab" data-mode="grupos">👥 Grupos</div>
     <div class="tab" data-mode="examtopics">📄 ExamTopics Originals</div>
   </div>
@@ -579,34 +579,110 @@ let exam=null,exTimer=null,exLeft=0;
 function renderExamen(){
   search.style.display='none';clearInterval(exTimer);
   app.innerHTML=`<main><div class="stage"><div class="configbox">
-    <h2 style="margin-top:0">📝 Simulacro de examen</h2>
-    <p style="color:var(--muted)">El formato <b>Certificación</b> replica el examen real: 100% preguntas objetivas, distribución oficial por dominio (Agentic 27% · Tools/MCP 18% · Claude Code 20% · Prompting 20% · Contexto 15%), sin puntos negativos, aprobación al 72% (≈720/1000). La selección prioriza tus preguntas no vistas y tus puntos débiles.</p>
-    <div class="configrow"><span>Formato</span>
-      <select id="exFmt">
-        <option value="cert60">🎓 Certificación — 60 preguntas / 120 min</option>
-        <option value="cert30" selected>🎓 Certificación corta — 30 preguntas / 60 min</option>
-        <option value="custom">Personalizado (V/F + desarrollo, resta 0,5)</option>
-      </select></div>
-    <div class="configrow"><span>Alcance <small style="color:var(--muted)">(solo personalizado)</small></span>
-      <select id="exScope"><option value="todo">Todo (5 dominios)</option><option value="d12">Dominios 1–2 (Agentic + Tools/MCP)</option><option value="d345">Dominios 3–5 (Code + Prompting + Contexto)</option></select></div>
-    <div class="configrow"><span>Duración</span>
-      <select id="exDur"><option value="0">Según formato</option><option value="30">30 min</option><option value="60">60 min</option><option value="120">120 min (real)</option><option value="-1">Sin límite</option></select></div>
-    <div class="configrow"><span>Nº de desarrollo <small style="color:var(--muted)">(solo personalizado)</small></span>
-      <select id="exOpen"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></div>
-    <button class="btn" id="exStart" style="width:100%;margin-top:10px">Comenzar examen</button>
+    <h2 style="margin-top:0">🎓 Examen Real — CCA-F</h2>
+    <p style="color:var(--muted);font-size:13px">Preguntas de <b>ExamAuthor, CyberSkill y Juli</b>, balanceadas por dominio según el blueprint oficial de Anthropic. Sin puntos negativos. Aprobación al 72% (≈720/1000).</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+      <div class="card" id="exOpt65" style="cursor:pointer;border:2px solid var(--accent);text-align:center;padding:14px 10px" data-n="65">
+        <div style="font-size:26px;font-weight:900;color:var(--accent)">65</div>
+        <div style="font-size:12px;font-weight:700;margin-top:2px">Examen completo</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">⏱ 120 min</div>
+      </div>
+      <div class="card" id="exOpt30" style="cursor:pointer;text-align:center;padding:14px 10px" data-n="30">
+        <div style="font-size:26px;font-weight:900;color:var(--accent2)">30</div>
+        <div style="font-size:12px;font-weight:700;margin-top:2px">Quick test</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">⏱ 60 min</div>
+      </div>
+      <div class="card" id="exOpt15" style="cursor:pointer;text-align:center;padding:14px 10px" data-n="15">
+        <div style="font-size:26px;font-weight:900;color:#a78bfa">15</div>
+        <div style="font-size:12px;font-weight:700;margin-top:2px">Mini test</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">⏱ 25 min</div>
+      </div>
+    </div>
+
+    <div style="background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Blueprint oficial CCA-F</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${[['D1 Agentic Architecture & Orchestration','27%','#d97742'],
+           ['D2 Tool Design & MCP Integration','18%','#5ac8e0'],
+           ['D3 Claude Code Configuration & Workflows','20%','#4cc38a'],
+           ['D4 Prompt Engineering & Structured Output','20%','#e2b93b'],
+           ['D5 Context Management & Reliability','15%','#a78bfa']
+          ].map(([name,pct,col])=>`<div style="display:flex;align-items:center;gap:8px">
+            <div style="width:${parseInt(pct)*1.8}px;height:6px;border-radius:3px;background:${col}"></div>
+            <span style="font-size:12px;color:${col};font-weight:700;min-width:30px">${pct}</span>
+            <span style="font-size:12px;color:var(--muted)">${name}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <input type="hidden" id="exN" value="65">
+    <button class="btn" id="exStart" style="width:100%;margin-top:4px">Comenzar examen →</button>
+
     <details style="margin-top:16px;color:var(--muted);font-size:13px"><summary style="cursor:pointer">🎯 Tips para el examen real</summary>
       <ul style="margin:8px 0;padding-left:18px">
-        <li>Todo es escenario: rastreá <b>síntoma → causa raíz → fix</b>; la pista suele estar en el enunciado.</li>
-        <li>"Most effective <b>first step</b>" ≠ la solución más completa: gana el fix más simple y barato.</li>
-        <li>Si dice <b>must / never / guarantee</b> → la respuesta es determinística (hooks/código), nunca "mejor prompt".</li>
-        <li>Desconfiá de flags o variables muy específicas que no reconozcas: los distractores inventados son un patrón (no existen CLAUDE_HEADLESS ni --batch).</li>
-        <li>No agregues infraestructura nueva (routers, clasificadores) si un cambio de config o de descripciones alcanza.</li>
-        <li>La confianza autoreportada del modelo nunca es señal válida de escalamiento.</li>
-        <li>Marcá las difíciles y seguí: necesitás ~720/1000, no un puntaje perfecto.</li>
+        <li>Todo es escenario: rastreá <b>síntoma → causa raíz → fix</b>.</li>
+        <li>"Most effective <b>first step</b>" ≠ solución más completa: gana el fix más simple.</li>
+        <li>Si dice <b>must / never / guarantee</b> → respuesta determinística (hooks/código), nunca "mejor prompt".</li>
+        <li>Desconfiá de flags inventados (no existen CLAUDE_HEADLESS, --batch, etc.).</li>
+        <li>No agregues infraestructura nueva si un cambio de config alcanza.</li>
+        <li>La confianza autoreportada del modelo nunca es señal de escalamiento.</li>
+        <li>Necesitás ~720/1000, no un puntaje perfecto. Marcá las difíciles y seguí.</li>
       </ul></details>
   </div></div></main>`;
-  document.getElementById('exStart').onclick=startExam;
+
+  // Selector cards
+  app.querySelectorAll('[data-n]').forEach(card=>{
+    card.onclick=()=>{
+      app.querySelectorAll('[data-n]').forEach(c=>{c.style.borderColor='var(--border)';c.style.borderWidth='1px'});
+      card.style.borderColor='var(--accent)';card.style.borderWidth='2px';
+      document.getElementById('exN').value=card.dataset.n;
+    };
+  });
+  document.getElementById('exStart').onclick=startExamReal;
 }
+
+/* ── Blueprint weights ── */
+const ET_WEIGHTS=[['d1',.27],['d2',.18],['d3',.20],['d4',.20],['d5',.15]];
+const ET_TIMES={65:120,30:60,15:25};
+
+function buildRealExam(n){
+  const pool={}; // domain → shuffled questions
+  ET_WEIGHTS.forEach(([d])=>{
+    pool[d]=shuffle((window.EXAMTOPICS_ORIGINALS||[]).filter(q=>q._etDom===d&&q.type==='mc'));
+  });
+  const quotas=ET_WEIGHTS.map(([d,w])=>[d,Math.round(w*n)]);
+  // Fix rounding to exactly n
+  const sum=quotas.reduce((a,x)=>a+x[1],0);
+  if(sum!==n) quotas[0][1]+=(n-sum);
+  const result=[];
+  quotas.forEach(([d,k])=>{
+    const take=(pool[d]||[]).slice(0,k);
+    // If not enough, fill from other domains
+    result.push(...take);
+  });
+  // If still short, fill from any remaining
+  if(result.length<n){
+    const used=new Set(result.map(q=>q.num+'_'+q.src));
+    const extra=shuffle((window.EXAMTOPICS_ORIGINALS||[]).filter(q=>q.type==='mc'&&!used.has(q.num+'_'+q.src)));
+    result.push(...extra.slice(0,n-result.length));
+  }
+  return shuffle(result.slice(0,n));
+}
+
+function startExamReal(){
+  const n=+document.getElementById('exN').value||65;
+  const mins=ET_TIMES[n]||120;
+  exam={q:buildRealExam(n),ans:{},cert:true,real:true};
+  exLeft=mins*60;
+  renderExamForm();
+  clearInterval(exTimer);
+  if(exLeft>0){exTimer=setInterval(()=>{exLeft--;const t=document.getElementById('exTimer');
+    if(t){t.textContent=fmt2(exLeft);if(exLeft<300)t.classList.add('warn')}
+    if(exLeft<=0){clearInterval(exTimer);gradeExam()}},1000);}
+}
+function startExam(){startExamReal();}  // alias for legacy calls
+
 function pickTerms(cat,correctTerm,n){
   let pool=(MATCH.find(c=>c.cat===cat)||{pairs:[]}).pairs.map(p=>p.t).filter(t=>t!==correctTerm);
   if(pool.length<n)pool=pool.concat(MATCH.flatMap(c=>c.pairs.map(p=>p.t)).filter(t=>t!==correctTerm));
@@ -796,11 +872,11 @@ const ET=(window.EXAMTOPICS_ORIGINALS||[]);
 
 /* ---------- Official CCA-F Domain/Subdomain taxonomy (guide_en.pdf) ---------- */
 const ET_DOMAINS=[
-  {id:'d1',label:'Domain 1',name:'Agentic Architecture',color:'#d97742',subs:[
+  {id:'d1',label:'Domain 1',name:'Agentic Architecture & Orchestration',color:'#d97742',subs:[
     {id:'1.1',name:'The Agentic Loop Lifecycle'},
     {id:'1.2',name:'Multi-Agent Orchestration'},
-    {id:'1.3',name:'Subagent Spawning & Context Passing'},
-    {id:'1.4',name:'Workflow Enforcement & Handoff'},
+    {id:'1.3',name:'Subagent Spawning and Context Passing'},
+    {id:'1.4',name:'Workflow Enforcement and Handoff'},
     {id:'1.5',name:'Claude Code / Agent SDK Hooks'},
     {id:'1.6',name:'Task Decomposition Strategies'},
     {id:'1.7',name:'Session Management'},
@@ -808,13 +884,13 @@ const ET_DOMAINS=[
   {id:'d2',label:'Domain 2',name:'Tool Design & MCP Integration',color:'#5ac8e0',subs:[
     {id:'2.1',name:'Tool Interface Design'},
     {id:'2.2',name:'Structured Error Responses'},
-    {id:'2.3',name:'Tool Distribution & tool_choice'},
+    {id:'2.3',name:'Tool Distribution and tool_choice'},
     {id:'2.4',name:'MCP Server Configuration'},
     {id:'2.5',name:'Built-in Tools'},
   ]},
-  {id:'d3',label:'Domain 3',name:'Claude Code Configuration',color:'#4cc38a',subs:[
+  {id:'d3',label:'Domain 3',name:'Claude Code Configuration & Workflows',color:'#4cc38a',subs:[
     {id:'3.1',name:'CLAUDE.md Hierarchy'},
-    {id:'3.2',name:'Skills & Slash Commands'},
+    {id:'3.2',name:'Skills and Custom Commands'},
     {id:'3.3',name:'Path-Specific Rules'},
     {id:'3.4',name:'Plan Mode vs Direct Execution'},
     {id:'3.5',name:'Iterative Refinement Techniques'},
