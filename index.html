@@ -542,9 +542,34 @@ const SCOPES={
 let exam=null,exTimer=null,exLeft=0;
 function renderExamen(){
   search.style.display='none';searchClear.style.display='none';clearInterval(exTimer);
+  const allMc=ET.filter(q=>q.type==='mc');
+  let mastered=0,pending=0;
+  allMc.forEach(q=>{const s=state[etGid(q)];if(s&&s.examLastResult==='correct')mastered++;else if(s&&s.examLastResult==='wrong')pending++;});
+  const freshN=allMc.length-mastered-pending;
+  const hist=state.__examHist||[];
+  const bestPct=hist.length?Math.max(...hist.map(h=>h.pct)):null;
+  const fmtHistDate=ts=>new Date(ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   app.innerHTML=`<main><div class="stage"><div class="configbox">
     <h2 style="margin-top:0">🎓 Examen Real — CCA-F</h2>
     <p style="color:var(--muted);font-size:13px">Preguntas de <b>ExamAuthor, CyberSkill y Juli</b>, balanceadas por dominio según el blueprint oficial de Anthropic. Sin puntos negativos. Aprobación al 72% (≈720/1000).</p>
+
+    <div style="background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Tu progreso en exámenes reales</div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+        <div><b style="color:var(--ok);font-size:17px">${mastered}</b> <span style="color:var(--muted);font-size:12px">dominadas · no se repiten</span></div>
+        <div><b style="color:var(--warn);font-size:17px">${pending}</b> <span style="color:var(--muted);font-size:12px">para repasar · reaparecen de vez en cuando</span></div>
+        <div><b style="color:var(--muted);font-size:17px">${freshN}</b> <span style="color:var(--muted);font-size:12px">sin ver</span></div>
+        ${hist.length?`<div style="margin-left:auto"><b style="color:var(--txt);font-size:17px">${hist.length}</b> <span style="color:var(--muted);font-size:12px">intento${hist.length>1?'s':''}</span> · mejor: <b style="color:${bestPct>=72?'var(--ok)':'var(--txt)'}">${bestPct}%</b></div>`:''}
+      </div>
+      ${hist.length?`<div style="display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--border);margin-top:12px;padding-top:10px">
+        ${hist.slice(0,5).map(h=>`<div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+          <span style="color:var(--muted);min-width:100px">${fmtHistDate(h.date)}</span>
+          <span style="color:var(--muted)">${h.n}Q</span>
+          <span style="font-weight:700;color:${h.pass?'var(--ok)':'var(--bad)'}">${h.pct}%</span>
+          <span style="color:var(--muted)">${h.pass?'✔ aprobado':'✘ no aprobado'}</span>
+        </div>`).join('')}
+      </div>`:`<div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--border);margin-top:12px;padding-top:10px">Todavía no rendiste ningún examen real — tus intentos van a quedar guardados acá.</div>`}
+    </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
       <div class="card" id="exOpt65" style="cursor:pointer;border:2px solid var(--accent);text-align:center;padding:14px 10px" data-n="65">
@@ -610,25 +635,50 @@ function renderExamen(){
 const ET_WEIGHTS=[['d1',.27],['d2',.18],['d3',.20],['d4',.20],['d5',.15]];
 const ET_TIMES={65:120,30:60,15:25};
 
-function buildRealExam(n){
-  const pool={}; // domain → shuffled questions
-  ET_WEIGHTS.forEach(([d])=>{
-    pool[d]=shuffle((window.EXAMTOPICS_ORIGINALS||[]).filter(q=>q._etDom===d&&q.type==='mc'));
+/* Separa un pool de preguntas en: nunca vistas en un examen, falladas la última
+   vez, y ya respondidas bien (dominadas). */
+function splitByExamHistory(qs){
+  const fresh=[],wrong=[],mastered=[];
+  qs.forEach(q=>{
+    const s=state[etGid(q)];
+    if(s&&s.examLastResult==='correct')mastered.push(q);
+    else if(s&&s.examLastResult==='wrong')wrong.push(q);
+    else fresh.push(q);
   });
+  return {fresh,wrong,mastered};
+}
+/* Arma la cuota de un dominio: reserva como máximo 1 lugar para repaso, y solo
+   la mitad de las veces (moneda al armar el examen) — así las preguntas que
+   salieron mal reaparecen de vez en cuando, no en todos los exámenes. El resto
+   de la cuota sale de las nunca vistas; las dominadas quedan de último recurso
+   por si el dominio no tiene material fresco suficiente. */
+function pickDomainQuota(qs,k){
+  const {fresh,wrong,mastered}=splitByExamHistory(qs);
+  let take=[],slots=k;
+  if(wrong.length&&slots>0&&Math.random()<0.5){
+    take.push(shuffle(wrong)[0]);
+    slots--;
+  }
+  take=take.concat(shuffle(fresh).slice(0,slots));
+  if(take.length<k)take=take.concat(shuffle(mastered).slice(0,k-take.length));
+  return take;
+}
+function buildRealExam(n){
   const quotas=ET_WEIGHTS.map(([d,w])=>[d,Math.round(w*n)]);
   // Fix rounding to exactly n
   const sum=quotas.reduce((a,x)=>a+x[1],0);
   if(sum!==n) quotas[0][1]+=(n-sum);
   const result=[];
   quotas.forEach(([d,k])=>{
-    const take=(pool[d]||[]).slice(0,k);
-    // If not enough, fill from other domains
-    result.push(...take);
+    const domQs=(window.EXAMTOPICS_ORIGINALS||[]).filter(q=>q._etDom===d&&q.type==='mc');
+    result.push(...pickDomainQuota(domQs,k));
   });
-  // If still short, fill from any remaining
+  // If still short, fill from any remaining (mismo criterio: sin ver/falladas antes que dominadas)
   if(result.length<n){
     const used=new Set(result.map(q=>q.num+'_'+q.src));
-    const extra=shuffle((window.EXAMTOPICS_ORIGINALS||[]).filter(q=>q.type==='mc'&&!used.has(q.num+'_'+q.src)));
+    const rest=(window.EXAMTOPICS_ORIGINALS||[]).filter(q=>q.type==='mc'&&!used.has(q.num+'_'+q.src));
+    const {fresh,wrong,mastered}=splitByExamHistory(rest);
+    const extra=shuffle(fresh).concat(shuffle(wrong)).concat(shuffle(mastered));
     result.push(...extra.slice(0,n-result.length));
   }
   return shuffle(result.slice(0,n));
@@ -744,6 +794,38 @@ function renderExamForm(){
   app.querySelectorAll('textarea').forEach(t=>t.oninput=()=>exam.ans[t.dataset.q]=t.value);
   document.getElementById('exFinish').onclick=()=>{if(confirm('¿Finalizar y corregir el examen?'))gradeExam()};
 }
+/* Guarda, por pregunta, si la última vez que salió en un examen real la respondiste
+   bien o mal — buildRealExam() usa esto para no repetir las que ya dominás y
+   para que las falladas vuelvan a aparecer de vez en cuando. */
+function recordExamAnswer(q,ok){
+  const gid=etGid(q);
+  const s=state[gid]||{};
+  s.examLastResult=ok?'correct':'wrong';
+  s.examC=(s.examC||0)+(ok?1:0);
+  s.examW=(s.examW||0)+(ok?0:1);
+  s.examLast=Date.now();
+  state[gid]=s;
+}
+/* Guarda el resumen del intento (fecha, puntaje, desglose por dominio) en el
+   historial del perfil actual, para poder mostrarlo en la pantalla de Examen Real. */
+function recordExamAttempt(exam,auto,autoMax){
+  const okAuto=Math.max(0,auto);
+  const pct=autoMax?Math.round(okAuto/autoMax*100):0;
+  const scaled=Math.round(100+900*(autoMax?okAuto/autoMax:0));
+  const perDom={};
+  ET_DOMAINS.forEach(dom=>{
+    const qs=exam.q.map((q,i)=>({q,i})).filter(x=>x.q._etDom===dom.id);
+    if(!qs.length)return;
+    const ok=qs.filter(x=>{const a=exam.ans[x.i];if(a===undefined)return false;
+      const corr=x.q.type==='vf'?x.q.correct:String(x.q.correct);return String(a)===corr}).length;
+    perDom[dom.id]={ok,total:qs.length};
+  });
+  const hist=state.__examHist||[];
+  hist.unshift({date:Date.now(),n:exam.q.length,pct,scaled,pass:pct>=72,perDom});
+  state.__examHist=hist.slice(0,30);
+  save();
+  const u=curUser();if(u){u.lastStudy=Date.now();saveProfiles()}
+}
 function gradeExam(){
   clearInterval(exTimer);
   let auto=0,autoMax=0,openMax=0;const openList=[];
@@ -752,12 +834,15 @@ function gradeExam(){
       autoMax++;const a=exam.ans[i];
       const correct=q.type==='vf'?q.correct:String(q.correct);
       const given=q.type==='vf'?a:String(a===undefined?'':a);
-      if(a===undefined){/*sin responder: 0*/}
-      else if(given===correct)auto+=1;
-      else if(!exam.cert)auto-=0.5;   // formato certificación: sin puntos negativos
+      const answered=a!==undefined;
+      const ok=answered&&given===correct;
+      if(ok)auto+=1;
+      else if(answered&&!exam.cert)auto-=0.5;   // formato certificación: sin puntos negativos
+      if(exam.real)recordExamAnswer(q,ok);
     } else {openMax++;openList.push(i)}
   });
   exam._auto=auto;exam._autoMax=autoMax;exam._openMax=openMax;exam._openList=openList;exam._openScore={};
+  if(exam.real)recordExamAttempt(exam,auto,autoMax);
   renderExamResult();
 }
 function renderExamResult(){
@@ -806,7 +891,19 @@ function updResult(){
   const pass=pct>=72;
   const scaled=Math.round(100+900*(max?total/max:0));
   let domHtml='';
-  if(exam.cert){
+  if(exam.cert&&exam.real){
+    domHtml='<div style="margin-top:16px;text-align:left;max-width:520px;margin-left:auto;margin-right:auto">'+
+      ET_DOMAINS.map(dom=>{
+        const qs=exam.q.map((q,i)=>({q,i})).filter(x=>x.q._etDom===dom.id);
+        if(!qs.length)return '';
+        const ok=qs.filter(x=>{const a=exam.ans[x.i];if(a===undefined)return false;
+          const corr=x.q.type==='vf'?x.q.correct:String(x.q.correct);return String(a)===corr}).length;
+        const p=Math.round(ok/qs.length*100);
+        return `<div class="dombar"><span class="nm">${dom.name}</span>
+          <span class="pbar" style="flex:1"><i style="width:${p}%"></i></span>
+          <b style="min-width:64px;text-align:right">${ok}/${qs.length}</b></div>`;
+      }).join('')+'</div>';
+  } else if(exam.cert){
     domHtml='<div style="margin-top:16px;text-align:left;max-width:520px;margin-left:auto;margin-right:auto">'+
       DOMW.map(([d])=>{
         const qs=exam.q.map((q,i)=>({q,i})).filter(x=>x.q.module===d);
