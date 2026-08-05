@@ -793,49 +793,240 @@ function updResult(){
 /* ============ MODO EXAMTOPICS ORIGINALS ============ */
 let etIdx=0,etShowAns=false;
 const ET=(window.EXAMTOPICS_ORIGINALS||[]);
+
+/* ---------- Official CCA-F Domain/Subdomain taxonomy (guide_en.pdf) ---------- */
+const ET_DOMAINS=[
+  {id:'d1',label:'Domain 1',name:'Agentic Architecture',color:'#d97742',subs:[
+    {id:'1.1',name:'The Agentic Loop Lifecycle'},
+    {id:'1.2',name:'Multi-Agent Orchestration'},
+    {id:'1.3',name:'Subagent Spawning & Context Passing'},
+    {id:'1.4',name:'Workflow Enforcement & Handoff'},
+    {id:'1.5',name:'Claude Code / Agent SDK Hooks'},
+    {id:'1.6',name:'Task Decomposition Strategies'},
+    {id:'1.7',name:'Session Management'},
+  ]},
+  {id:'d2',label:'Domain 2',name:'Tool Design & MCP Integration',color:'#5ac8e0',subs:[
+    {id:'2.1',name:'Tool Interface Design'},
+    {id:'2.2',name:'Structured Error Responses'},
+    {id:'2.3',name:'Tool Distribution & tool_choice'},
+    {id:'2.4',name:'MCP Server Configuration'},
+    {id:'2.5',name:'Built-in Tools'},
+  ]},
+  {id:'d3',label:'Domain 3',name:'Claude Code Configuration',color:'#4cc38a',subs:[
+    {id:'3.1',name:'CLAUDE.md Hierarchy'},
+    {id:'3.2',name:'Skills & Slash Commands'},
+    {id:'3.3',name:'Path-Specific Rules'},
+    {id:'3.4',name:'Plan Mode vs Direct Execution'},
+    {id:'3.5',name:'Iterative Refinement Techniques'},
+    {id:'3.6',name:'CI/CD Integration'},
+  ]},
+  {id:'d4',label:'Domain 4',name:'Prompt Engineering & Structured Output',color:'#e2b93b',subs:[
+    {id:'4.1',name:'Explicit Criteria'},
+    {id:'4.2',name:'Few-Shot Prompting'},
+    {id:'4.3',name:'Structured Output via tool_use'},
+    {id:'4.4',name:'Validation-Retry Loops'},
+    {id:'4.5',name:'Batch Processing'},
+    {id:'4.6',name:'Multi-Pass Review'},
+  ]},
+  {id:'d5',label:'Domain 5',name:'Context Management & Reliability',color:'#a78bfa',subs:[
+    {id:'5.1',name:'Conversation Context Management'},
+    {id:'5.2',name:'Escalation Patterns'},
+    {id:'5.3',name:'Error Propagation'},
+    {id:'5.4',name:'Large Codebase Context Management'},
+    {id:'5.5',name:'Human Review Workflows'},
+    {id:'5.6',name:'Information Provenance'},
+  ]},
+];
+
+/* ---------- Classify each question by keyword matching ---------- */
+function classifyEtQuestion(q){
+  const text=(q.question+' '+(q.explanation||'')+' '+(q.domain||'')).toLowerCase();
+  // CyberSkill questions have a domain field — map it
+  const domainMap={
+    'research_pipeline':'d1','multi_agent':'d1','customer_support':'d5',
+    'document_processing':'d4','code_assistant':'d3','data_analysis':'d4',
+    'content_creation':'d4','tool_use':'d2','context':'d5','error':'d5',
+    'escalat':'d5','mcp':'d2','tool':'d2','prompt':'d4','batch':'d4',
+    'claude.md':'d3','skill':'d3','plan mode':'d3','ci/cd':'d3',
+    'agentic':'d1','orchestrat':'d1','subagent':'d1','coordinator':'d1',
+    'spawn':'d1','session':'d1','decompos':'d1','handoff':'d1',
+  };
+  // Subdomain keywords
+  const subMap={
+    '1.1':['agentic loop','lifecycle','loop iteration','think.*act.*observe'],
+    '1.2':['coordinator','orchestrat','multi.agent','synthesis agent','research.*agent','web search agent'],
+    '1.3':['spawn','context pass','subagent.*context','passing.*result','prompt.*inject'],
+    '1.4':['handoff','guardrail','enforce','workflow.*rule','stop.*condition'],
+    '1.5':['agent sdk','hook','pre_tool','post_tool','claude code.*hook'],
+    '1.6':['decompos','task.*break','subtask','planning.*agent'],
+    '1.7':['session','resume','persist.*session','conversation.*manag'],
+    '2.1':['tool.*design','schema.*tool','input.*schema','tool.*interface','json.*schema.*tool'],
+    '2.2':['error.*tool','tool.*error','retry.*tool','error.*response','structured.*error'],
+    '2.3':['tool_choice','tool.*distribut','which.*tool','select.*tool'],
+    '2.4':['mcp','model context protocol','mcp.*server','mcp.*config'],
+    '2.5':['built.in.*tool','web search.*tool','bash.*tool','computer.*use'],
+    '3.1':['claude.md','memory.*file','project.*instruction','hierarchy.*claude'],
+    '3.2':['slash command','skill.*folder','skill.*claude','skills.*dir'],
+    '3.3':['path.*rule','scoped.*rule','directory.*rule','path.*instruct'],
+    '3.4':['plan mode','direct.*exec','--plan','shift.*enter'],
+    '3.5':['iterative.*refine','refine.*output','multi.*pass.*refine'],
+    '3.6':['ci.*cd','pipeline.*claude','headless','non.*interactive','batch.*claude'],
+    '4.1':['explicit.*criteri','clear.*criteri','grading.*criteri','evaluation.*criteri','rubric'],
+    '4.2':['few.shot','example.*prompt','shot.*example','in.context.*example'],
+    '4.3':['structured.*output','tool_use.*output','json.*output','schema.*output'],
+    '4.4':['validat.*retry','retry.*loop','validat.*loop','schema.*valid'],
+    '4.5':['batch.*process','parallel.*process','bulk.*process','high.*volume'],
+    '4.6':['multi.pass','review.*pass','second.*pass','draft.*review'],
+    '5.1':['context.*window','context.*compress','compact','context.*manag','long.*context'],
+    '5.2':['escalat','human.*review','human.*in.*loop','handoff.*human'],
+    '5.3':['error.*propagat','propagat.*error','retry.*backoff','transient.*fail'],
+    '5.4':['codebase.*context','large.*codebase','scratchpad','code.*context'],
+    '5.5':['stratif','sample.*review','human.*review.*workflow','field.*confidence','calibrat'],
+    '5.6':['provenance','source.*attribution','claim.*source','conflicting.*data','temporal.*data'],
+  };
+  // Try subdomain first (more specific)
+  let bestSub=null,bestDom=null;
+  for(const [sid,kws] of Object.entries(subMap)){
+    for(const kw of kws){
+      if(new RegExp(kw,'i').test(text)){
+        if(!bestSub)bestSub=sid;
+        break;
+      }
+    }
+  }
+  if(bestSub){
+    bestDom='d'+bestSub[0];
+    return{domain:bestDom,sub:bestSub};
+  }
+  // Fallback: domain-level keywords
+  for(const[kw,did] of Object.entries(domainMap)){
+    if(text.includes(kw)){return{domain:did,sub:null}}
+  }
+  return{domain:null,sub:null};
+}
+// Pre-classify all ET questions
+ET.forEach(q=>{const c=classifyEtQuestion(q);q._etDom=c.domain;q._etSub=c.sub;});
+
+/* ---------- State for ET sidebar ---------- */
+let etSelDom='all',etSelSub=null,etList=ET.slice(),etExpanded={};
+
+function getEtList(){
+  if(etSelSub)return ET.filter(q=>q._etSub===etSelSub);
+  if(etSelDom&&etSelDom!=='all')return ET.filter(q=>q._etDom===etSelDom);
+  return ET.slice();
+}
+
 function renderExamtopics(){
   search.style.display='none';
-  app.innerHTML=`
-  <main style="width:100%"><div class="stage">
+  etList=getEtList();
+  if(etIdx>=etList.length)etIdx=0;
+
+  app.innerHTML=`<aside id="etSidebar" style="width:260px;min-width:220px;border-right:1px solid var(--border);padding:14px 10px;overflow-y:auto;background:#0b1018;flex-shrink:0"></aside>
+  <main style="flex:1;overflow:auto;padding:20px 24px"><div class="stage">
     <!-- Header banner -->
-    <div style="background:linear-gradient(135deg,#2b1a0a,#3d2510);border:1px solid #c97a2a;border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="background:linear-gradient(135deg,#2b1a0a,#3d2510);border:1px solid #c97a2a;border-radius:14px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div>
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:4px">📄 ExamTopics Originals</div>
-        <div style="font-size:20px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
-        <div style="font-size:13px;color:#9aa7b4;margin-top:3px">Preguntas originales · sin parafraseo · <b style="color:#e89a6b">${ET.length} preguntas</b> · <span style="color:#4cc38a">Q1–Q41 ExamAuthor + ${ET.length-41} CyberSkill</span></div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c97a2a;font-weight:700;margin-bottom:2px">📄 ExamTopics Originals</div>
+        <div style="font-size:17px;font-weight:800;color:#fff">Claude Certified Architect – Foundations</div>
+        <div style="font-size:12px;color:#9aa7b4;margin-top:2px"><b style="color:#e89a6b">${ET.length} preguntas</b> · 41 ExamAuthor + 38 CyberSkill + 60 Juli</div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="background:#0d1117;border:1px solid #c97a2a;border-radius:20px;padding:4px 14px;font-size:12px;color:#c97a2a;font-weight:700">📄 ExamAuthor PDF</span>
-        <span style="background:#0d1117;border:1px solid #4cc38a;border-radius:20px;padding:4px 14px;font-size:12px;color:#4cc38a;font-weight:700">🌐 examauthor.com</span>
-        <span style="background:#0d1117;border:1px solid #5ac8e0;border-radius:20px;padding:4px 14px;font-size:12px;color:#5ac8e0;font-weight:700">🎯 cyberskill.world</span>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+        <span style="background:#0d1117;border:1px solid #c97a2a;border-radius:20px;padding:3px 10px;font-size:11px;color:#c97a2a;font-weight:700">📄 PDF</span>
+        <span style="background:#0d1117;border:1px solid #4cc38a;border-radius:20px;padding:3px 10px;font-size:11px;color:#4cc38a;font-weight:700">🌐 web</span>
+        <span style="background:#0d1117;border:1px solid #5ac8e0;border-radius:20px;padding:3px 10px;font-size:11px;color:#5ac8e0;font-weight:700">🎯 CyberSkill</span>
+        <span style="background:#0d1117;border:1px solid #f472b6;border-radius:20px;padding:3px 10px;font-size:11px;color:#f472b6;font-weight:700">📱 Juli</span>
       </div>
     </div>
-    <!-- Question nav -->
-    <div class="toolbar" style="margin-bottom:16px;flex-wrap:wrap;gap:6px" id="etNav"></div>
+    <!-- Nav chips -->
+    <div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:5px" id="etNav"></div>
     <!-- Card -->
     <div id="etCard"></div>
-    <div class="nav" style="margin-top:18px">
+    <div class="nav" style="margin-top:16px">
       <button class="btn ghost" id="etPrev">← Anterior</button>
       <button class="btn ghost" id="etJump" style="font-size:13px">Ir a nº…</button>
       <button class="btn" id="etNext">Siguiente →</button>
     </div>
   </div></main>`;
+
+  buildEtSidebar();
   buildEtNav();
   drawEtCard();
+
   document.getElementById('etPrev').onclick=()=>{if(etIdx>0){etIdx--;etShowAns=false;drawEtCard();buildEtNav()}};
-  document.getElementById('etNext').onclick=()=>{if(etIdx<ET.length-1){etIdx++;etShowAns=false;drawEtCard();buildEtNav()}};
+  document.getElementById('etNext').onclick=()=>{if(etIdx<etList.length-1){etIdx++;etShowAns=false;drawEtCard();buildEtNav()}};
   document.getElementById('etJump').onclick=()=>{
-    const n=prompt(`Ir a pregunta (1 – ${ET.length}):`);
+    const n=prompt(`Ir a pregunta (1 – ${etList.length}):`);
     const ni=parseInt(n)-1;
-    if(!isNaN(ni)&&ni>=0&&ni<ET.length){etIdx=ni;etShowAns=false;drawEtCard();buildEtNav()}
+    if(!isNaN(ni)&&ni>=0&&ni<etList.length){etIdx=ni;etShowAns=false;drawEtCard();buildEtNav()}
   };
 }
+
+function buildEtSidebar(){
+  const sb=document.getElementById('etSidebar');if(!sb)return;
+  const total=ET.length;
+  let html=`<h3 style="margin:0 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Dominios · Subdominios</h3>`;
+  // "Todas" row
+  html+=`<div class="mod ${etSelDom==='all'&&!etSelSub?'active':''}" data-etd="all" style="font-size:13px;padding:8px 10px">
+    <span>📚 Todas</span><span class="cnt">${total}</span></div>`;
+
+  ET_DOMAINS.forEach(dom=>{
+    const domQs=ET.filter(q=>q._etDom===dom.id).length;
+    const isExpanded=etExpanded[dom.id]||etSelDom===dom.id;
+    const isActive=etSelDom===dom.id&&!etSelSub;
+    html+=`<div class="mod ${isActive?'active':''}" data-etd="${dom.id}" style="font-size:12.5px;padding:7px 10px;margin-top:4px">
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="color:${dom.color};font-size:10px;font-weight:800">${dom.label.replace('Domain ','D')}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="${dom.name}">${dom.name}</span>
+      </span>
+      <span class="cnt">${domQs}</span></div>`;
+    // Subdomain rows (show if expanded)
+    if(isExpanded){
+      dom.subs.forEach(sub=>{
+        const subQs=ET.filter(q=>q._etSub===sub.id).length;
+        const subActive=etSelSub===sub.id;
+        html+=`<div class="mod ${subActive?'active':''}" data-ets="${sub.id}" style="font-size:12px;padding:5px 10px 5px 22px;border-radius:8px;margin:1px 0">
+          <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px" title="${sub.id} · ${sub.name}">${sub.id} ${sub.name}</span>
+          <span class="cnt" style="${subQs===0?'opacity:.4':''}">${subQs}</span></div>`;
+      });
+    }
+  });
+
+  html+=`<div style="margin-top:14px;padding:8px 10px;border-radius:8px;background:#0d1117;border:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.5">
+    <b style="color:var(--txt)">CCA-F Blueprint</b><br>
+    D1 Agentic 27%<br>D2 Tools/MCP 18%<br>D3 Claude Code 20%<br>D4 Prompting 20%<br>D5 Context 15%
+  </div>`;
+
+  sb.innerHTML=html;
+
+  sb.querySelectorAll('[data-etd]').forEach(el=>el.onclick=()=>{
+    const did=el.dataset.etd;
+    if(did===etSelDom&&!etSelSub){
+      // Toggle expand/collapse
+      if(did!=='all')etExpanded[did]=!etExpanded[did];
+    } else {
+      if(etSelDom&&etSelDom!=='all')etExpanded[etSelDom]=false;
+      etSelDom=did;etSelSub=null;
+      if(did!=='all')etExpanded[did]=true;
+    }
+    etIdx=0;etShowAns=false;
+    etList=getEtList();
+    buildEtSidebar();buildEtNav();drawEtCard();
+  });
+  sb.querySelectorAll('[data-ets]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    etSelSub=el.dataset.ets;
+    etIdx=0;etShowAns=false;
+    etList=getEtList();
+    buildEtSidebar();buildEtNav();drawEtCard();
+  });
+}
+
 function buildEtNav(){
   const nav=document.getElementById('etNav');if(!nav)return;
-  // Show up to 10 page numbers around current
-  const total=ET.length,cur=etIdx;
-  let start=Math.max(0,cur-5),end=Math.min(total-1,start+9);
-  if(end-start<9)start=Math.max(0,end-9);
+  const total=etList.length,cur=etIdx;
+  if(!total){nav.innerHTML=`<span style="color:var(--muted);font-size:13px">Sin preguntas en esta selección</span>`;return}
+  let start=Math.max(0,cur-4),end=Math.min(total-1,start+8);
+  if(end-start<8)start=Math.max(0,end-8);
   let html=`<span style="color:var(--muted);font-size:13px;margin-right:4px">${cur+1}/${total}</span>`;
   if(start>0)html+=`<span class="chip" data-ei="0">1</span><span style="color:var(--muted)">…</span>`;
   for(let i=start;i<=end;i++){
@@ -845,17 +1036,20 @@ function buildEtNav(){
   nav.innerHTML=html;
   nav.querySelectorAll('.chip[data-ei]').forEach(c=>c.onclick=()=>{etIdx=+c.dataset.ei;etShowAns=false;drawEtCard();buildEtNav()});
 }
+
 function drawEtCard(){
-  const host=document.getElementById('etCard');if(!host||!ET.length)return;
-  const q=ET[etIdx];
+  const host=document.getElementById('etCard');if(!host)return;
+  if(!etList.length){host.innerHTML='<div class="empty">Sin preguntas en esta selección.<br><small style="color:var(--muted)">Seleccioná otro dominio o subdominios del panel izquierdo.</small></div>';return}
+  const q=etList[etIdx];
   const letterMap=['A','B','C','D'];
   const correctLetter=q.answer;
   const correctIdx=q.correct;
-  // Format explanation: escape HTML, keep structure
+  // Find domain info for color accent
+  const dom=ET_DOMAINS.find(d=>d.id===q._etDom);
+  const domColor=dom?dom.color:'var(--accent)';
   function fmtExpl(t){
     if(!t)return '';
     t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    // Bold ✅ and ❌ sections headers
     t=t.replace(/(✅[^\n]*)/g,'<span style="color:var(--ok);font-weight:700">$1</span>');
     t=t.replace(/(❌[^\n]*)/g,'<span style="color:var(--bad)">$1</span>');
     t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
@@ -869,36 +1063,44 @@ function drawEtCard(){
   let optsHtml='<div class="opts">';
   q.options.forEach((o,i)=>{
     const letter=letterMap[i];
-    let cls='opt'+(etShowAns?(i===correctIdx?' correct':(letter!==correctLetter?'':' correct')):'');
-    optsHtml+=`<div class="${cls}${etShowAns?' disabled':''}" data-eti="${i}"><span class="k">${letter}</span><span>${o}</span>`;
+    let cls='opt'+(etShowAns?(i===correctIdx?' correct':''):' ');
+    if(etShowAns&&i!==correctIdx)cls='opt wrong disabled';
+    else if(etShowAns&&i===correctIdx)cls='opt correct disabled';
+    optsHtml+=`<div class="${cls}" data-eti="${i}"><span class="k">${letter}</span><span>${o}</span>`;
     if(etShowAns&&i===correctIdx)optsHtml+=` <span style="margin-left:auto;color:var(--ok);font-weight:700">✔</span>`;
     optsHtml+='</div>';
   });
   optsHtml+='</div>';
-  host.innerHTML=`<div class="card">
+
+  // Domain/sub tag for this question
+  const subInfo=ET_DOMAINS.flatMap(d=>d.subs).find(s=>s.id===q._etSub);
+  const domTag=dom?`<span class="tag" style="background:${domColor}22;color:${domColor};border:1px solid ${domColor}44">${dom.label.replace('Domain ','D')}</span>`:'';
+  const subTag=subInfo?`<span class="tag mod" title="${subInfo.id}">${subInfo.id} · ${subInfo.name}</span>`:'';
+  const srcTag=q.src==='cyberskill'?'🎯 CyberSkill':q.src==='juli'?'📱 Juli':typeof q.num==='number'&&q.num<=30?'📄 PDF':'🌐 web';
+
+  host.innerHTML=`<div class="card" style="border-color:${domColor}44">
     <div class="qmeta">
       <span class="tag mc">Opción múltiple</span>
-      <span class="tag srcx" title="Fuente original">${q.src==='cyberskill'?'🎯 CyberSkill':q.num<=30?'📄 ExamAuthor PDF':'🌐 examauthor.com'}</span>
-      ${q.src==='cyberskill'&&q.domain?`<span class="tag mod" title="Dominio">${q.domain.replace(/_/g,' ')}</span>`:''}
+      ${domTag}${subTag}
+      <span class="tag srcx">${srcTag}</span>
       <span class="tag intermediate">Intermedio</span>
-      <span class="qnum" style="margin-left:auto">Pregunta ${etIdx+1} de ${ET.length}${typeof q.num==='number'?' · #'+q.num+' original':''}</span>
+      <span class="qnum" style="margin-left:auto">${etIdx+1}/${etList.length}${typeof q.num==='number'?' · #'+q.num:''}</span>
     </div>
-    <div class="question" style="font-size:18px">${q.question}</div>
+    <div class="question" style="font-size:17px">${q.question}</div>
     ${optsHtml}
     ${etShowAns?'':`<button class="btn" id="etReveal">Mostrar respuesta</button>`}
     <div class="answer${etShowAns?' show':''}" id="etAns">
       <h4>Respuesta correcta y explicación</h4>
       <div class="verdict v">Correcta: ${correctLetter}) ${q.options[correctIdx]}</div>
-      <div class="body" style="margin-top:12px">${fmtExpl(q.explanation)}</div>
+      <div class="body" style="margin-top:10px">${fmtExpl(q.explanation)}</div>
     </div>
   </div>`;
   if(!etShowAns){
     document.getElementById('etReveal').onclick=()=>{etShowAns=true;drawEtCard();buildEtNav()};
-    host.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
-      etShowAns=true;drawEtCard();buildEtNav();
-    });
+    host.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{etShowAns=true;drawEtCard();buildEtNav()});
   }
 }
+
 
 /* ---------- router ---------- */
 function setMode(m){
